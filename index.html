@@ -1,0 +1,2151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuiltAI · Universal AI mit Coding Mode</title>
+<style>
+
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #080a16;
+    --bg-elev: #0d1223;
+    --surface: #141b31;
+    --surface-2: #1a2340;
+    --surface-3: #222d4f;
+    --text: #f5f7ff;
+    --text-secondary: #bec8ea;
+    --text-muted: #8894b8;
+    --border: rgba(140,160,255,0.20);
+    --border-strong: rgba(160,181,255,0.38);
+    --accent: #6f7bff;
+    --accent-soft: rgba(111,123,255,0.28);
+    --danger: #ef4444;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+    --shadow: 0 16px 42px rgba(6, 10, 30, 0.55);
+    --sidebar-width: 272px;
+  }
+
+  body[data-theme='sunrise'] {
+    --bg: #1b0f13;
+    --bg-elev: #26131c;
+    --surface: #3a1d2e;
+    --surface-2: #4b2540;
+    --surface-3: #5d2e51;
+    --text: #fff5f8;
+    --text-secondary: #f2cad8;
+    --text-muted: #c996aa;
+    --border: rgba(255, 164, 196, 0.26);
+    --border-strong: rgba(255, 188, 212, 0.45);
+    --accent: #ff4d8d;
+    --accent-soft: rgba(255, 77, 141, 0.28);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 10% 0%, #1a2458 0%, #0b1026 35%, var(--bg) 72%);
+    color: var(--text);
+    line-height: 1.5;
+    display: flex;
+    position: relative;
+  }
+
+  #bg-orbs {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: .35;
+  }
+  .orb.one { width: 320px; height: 320px; background: #6f7bff; top: -80px; left: -90px; }
+  .orb.two { width: 260px; height: 260px; background: #41d6ff; bottom: -70px; right: 6%; }
+  .orb.three { width: 220px; height: 220px; background: #9b6dff; top: 24%; right: -70px; }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  a { color: #76c8ff; }
+
+  #sidebar {
+    position: relative;
+    z-index: 2;
+    width: var(--sidebar-width);
+    background: linear-gradient(180deg, rgba(17, 26, 55, 0.95) 0%, rgba(11, 17, 36, 0.95) 100%);
+    backdrop-filter: blur(8px);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  #logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #logo-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(160deg, #6f7bff, #41d6ff);
+    border: 1px solid var(--border);
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    color: #fff;
+    box-shadow: 0 10px 25px rgba(111, 123, 255, 0.4);
+  }
+
+  #logo-text h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  #logo-text h1 span { color: var(--text-secondary); }
+
+  #model-tag {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  #mode-selector {
+    margin: 12px 12px 6px;
+    padding: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    display: flex;
+    gap: 4px;
+  }
+
+  .mode-option {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    padding: 8px 10px;
+    cursor: pointer;
+    flex: 1;
+    transition: 0.15s ease;
+  }
+
+  .mode-option.active {
+    color: #fff;
+    background: #293459;
+  }
+
+  .mode-option.coding.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  #websearch-toggle {
+    margin: 6px 12px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+
+  #websearch-toggle .label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+  #websearch-toggle .beta { font-size: 9px; background: #3a3a3a; border: 1px solid var(--border); border-radius: 999px; padding: 2px 6px; }
+  #websearch-toggle .toggle-switch { width: 36px; height: 20px; border-radius: 99px; background: #444; position: relative; transition: .18s; }
+  #websearch-toggle .toggle-switch::after { content:''; width: 16px; height: 16px; border-radius: 50%; background: #fff; position:absolute; top:2px; left:2px; transition:.18s; }
+  #websearch-toggle.active .toggle-switch { background: var(--accent); }
+  #websearch-toggle.active .toggle-switch::after { left: 18px; }
+
+  #new-chat-btn {
+    margin: 8px 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  #new-chat-btn:hover { background: var(--surface-3); }
+
+  #hist-label {
+    margin: 10px 12px 6px;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  #hist-search { margin: 0 12px 8px; }
+  #hist-search input { width: 100%; border: 1px solid var(--border); background: var(--surface); color: var(--text); border-radius: 9px; padding: 8px 10px; font-size: 12px; }
+  #hist-search input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+  #hist-list { flex: 1; overflow-y: auto; padding: 0 8px 8px; }
+
+  .hist-item {
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .hist-item:hover, .hist-item.active { background: var(--surface); border-color: var(--border); color: var(--text); }
+
+  #sidebar-foot {
+    border-top: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .foot-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 7px 9px;
+    cursor: pointer;
+  }
+
+  #ver-lbl { font-size: 10px; color: var(--text-muted); flex: 1; text-align: center; }
+
+  #main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 2; }
+
+  #header {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    background: rgba(11, 16, 36, 0.75);
+    backdrop-filter: blur(8px);
+  }
+
+  #sidebar-toggle {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  #chat-title { font-size: 14px; color: var(--text-secondary); flex: 1; }
+
+  #mode-indicator {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  #mode-indicator.coding { border-color: rgba(16,163,127,0.45); color: #7deacb; }
+  #status { font-size: 12px; color: var(--text-muted); }
+  #status::before { content: '●'; margin-right: 6px; color: #22c55e; }
+
+  #websearch-indicator {
+    display: none;
+    font-size: 11px;
+    border: 1px solid rgba(118,200,255,0.4);
+    color: #76c8ff;
+    background: rgba(118,200,255,0.08);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  #websearch-indicator.active { display: inline-flex; align-items: center; gap: 6px; }
+
+  .top-action {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  #canvas-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
+  .bubble-toolbar { margin-top: 8px; display:flex; }
+  .copy-msg-btn { border:1px solid var(--border); background:var(--surface); color:var(--text-secondary); border-radius:999px; padding:4px 10px; font-size:11px; cursor:pointer; }
+
+  #content { flex: 1; display: flex; min-height: 0; }
+  #chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  #welcome {
+    flex: 1;
+    max-width: 840px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 44px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  #welcome .star { font-size: 30px; opacity: .9; }
+  #welcome h2 { font-size: 34px; font-weight: 600; letter-spacing: -0.02em; }
+  #welcome p { color: var(--text-muted); font-size: 14px; margin-bottom: 14px; }
+
+  #quick-grid { width: 100%; max-width: 760px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+
+  .quick-card {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, #18213f 0%, #131b34 100%);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: left;
+    color: inherit;
+    cursor: pointer;
+  }
+  .quick-card:hover { border-color: var(--border-strong); background: linear-gradient(180deg, #1d2850 0%, #172142 100%); }
+  .quick-card .qc-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .quick-card .qc-sub { font-size: 12px; color: var(--text-muted); }
+
+  #msgs { flex: 1; overflow-y: auto; display:none; padding: 10px 0 80px; }
+  #msgs.visible { display: flex; flex-direction: column; }
+
+  .bubble {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 16px 20px;
+  }
+
+  .av {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+  }
+  .av.user { background: #3a3a3a; color: #fff; }
+  .av.ai { background: var(--accent); color: #fff; }
+
+  .btext { color: #dfdfdf; font-size: 15px; line-height: 1.68; }
+  .btext code { background: #161616; border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .btext pre { margin: 12px 0; background: #161616; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; overflow-x: auto; }
+  .btext pre code { border: none; padding: 0; }
+  .btext h1,.btext h2,.btext h3 { margin: 14px 0 8px; }
+  .btext ul,.btext ol { margin: 8px 0 8px 20px; }
+
+  .citations {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #242424;
+    padding: 10px;
+  }
+  .citations-title { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 8px; }
+  .citations-list { display: flex; flex-wrap: wrap; gap: 8px; }
+  .citation-link { font-size: 11px; color: #cdeeff; text-decoration: none; border: 1px solid var(--border); border-radius: 999px; padding: 4px 9px; }
+  .search-queries { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+  .inline-citation { border: 1px solid var(--border); border-radius: 6px; padding: 0 5px; font-size: 11px; text-decoration: none; color: #cdeeff; }
+
+  .code-actions { margin: 10px 0 0 40px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .code-action-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); border-radius: 999px; padding: 6px 11px; font-size: 12px; cursor:pointer; }
+
+  .thinking-dots { display:flex; gap:5px; padding: 4px 0; }
+  .thinking-dots span { width:6px; height:6px; border-radius:50%; background: var(--text-muted); animation: blink 1.2s infinite; }
+  .thinking-dots span:nth-child(2){ animation-delay: .15s; }
+  .thinking-dots span:nth-child(3){ animation-delay: .3s; }
+  @keyframes blink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+
+  #input-area {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 20px 18px;
+  }
+
+  #input-box {
+    border: 1px solid var(--border-strong);
+    background: rgba(20, 27, 49, 0.95);
+    border-radius: 26px;
+    padding: 10px 10px 10px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  #input-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  #prompt {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    max-height: 220px;
+    resize: none;
+    padding: 6px 0;
+  }
+
+  #send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  #send-btn:disabled { opacity: .45; cursor: default; }
+
+  #footer-info { text-align:center; margin-top:8px; font-size:11px; color: var(--text-muted); }
+
+  #canvas-panel {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border);
+    background: #0d1223;
+    transition: width .2s ease, min-width .2s ease;
+  }
+  #canvas-panel.open { width: 54%; min-width: 580px; max-width: 900px; }
+
+  #cv-header, #cv-tabs, #cv-file-tabs { border-bottom: 1px solid var(--border); }
+  #cv-header { height: 50px; display:flex; align-items:center; gap:8px; padding: 0 12px; }
+  #cv-name { flex:1; font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--text-secondary); }
+  .cv-btn { border:1px solid var(--border); background: var(--surface); color: var(--text-secondary); border-radius: 999px; font-size:11px; padding: 6px 10px; cursor:pointer; }
+  .cv-btn.run { color:#7deacb; border-color: rgba(16,163,127,.5); }
+  .cv-btn.word { color:#a9d3ff; border-color: rgba(118,200,255,.5); }
+  .cv-btn.close { border:none; background:transparent; font-size:18px; color:var(--text-muted); }
+
+  #cv-file-tabs { min-height: 38px; display:flex; align-items:center; background:#151515; }
+  #cv-file-tabs-inner { display:flex; flex:1; overflow-x:auto; }
+  .cv-file-tab { height: 38px; display:flex; align-items:center; gap:8px; padding: 0 12px; color: var(--text-muted); border-right:1px solid var(--border); cursor:pointer; font-size:12px; }
+  .cv-file-tab.active { color: #fff; background: #2e2e2e; }
+  .cv-file-tab .tab-close { opacity:.6; }
+  #cv-new-file-btn { width:38px; height:38px; border:none; border-left:1px solid var(--border); background:transparent; color:var(--text-secondary); cursor:pointer; }
+
+  #cv-tabs { display:flex; padding: 0 10px; background:#1a1a1a; }
+  .cv-tab { padding: 10px 14px; border-bottom:2px solid transparent; color: var(--text-muted); cursor:pointer; font-size:12px; }
+  .cv-tab.active { color:#fff; border-bottom-color: var(--accent); }
+
+  #cv-code-wrap { flex:1; background:#101010; }
+  #cv-code-editor { width:100%; height:100%; border:none; outline:none; resize:none; background:#101010; color:#ddd; font-family:'JetBrains Mono', monospace; font-size:13px; line-height:1.6; padding: 16px; }
+  #cv-statusbar {
+    height: 28px;
+    border-top: 1px solid var(--border);
+    background: #161616;
+    color: var(--text-muted);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  #cv-file-meta { color: var(--text-secondary); }
+  #cv-save-state.saved { color: #7deacb; }
+  #cv-save-state.dirty { color: #f6c56c; }
+  #cv-preview-wrap { flex:1; display:none; background:white; }
+  #cv-preview-wrap.active { display:flex; flex-direction:column; }
+  #cv-preview-iframe { flex:1; border:none; }
+  #cv-preview-placeholder { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#666; background:#f4f4f4; }
+
+  #overlay, #settings-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  #overlay.hidden { display:none; }
+  #settings-panel { display:none; }
+  #settings-panel.open { display:flex; }
+
+  #shortcuts-panel { display:none; }
+  #shortcuts-panel.open { display:flex; }
+
+  #dlg, #settings-dlg, #shortcuts-dlg {
+    width: min(92vw, 460px);
+    border-radius: 16px;
+    background: #262626;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    display:flex;
+    flex-direction:column;
+    gap: 14px;
+  }
+  #dlg h2, #settings-dlg h2, #shortcuts-dlg h2 { font-size: 20px; }
+  #dlg p { font-size: 13px; color: var(--text-secondary); }
+
+  #dlg input, .s-input {
+    border: 1px solid var(--border-strong);
+    background: #1b1b1b;
+    color: var(--text);
+    border-radius: 10px;
+    padding: 11px 12px;
+    outline: none;
+  }
+  #dlg input:focus, .s-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  #dlg-submit, .s-save {
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 10px;
+    padding: 11px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .s-cancel { border:1px solid var(--border); background:#333; color:var(--text-secondary); border-radius:10px; padding:11px 14px; cursor:pointer; }
+  .s-row { display:flex; gap:10px; }
+  .s-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.08em; }
+  .s-danger { border:none; background:none; color:#ff8f8f; font-size:12px; cursor:pointer; }
+
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1d1d1d;
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events:none;
+    transition: opacity .18s;
+    z-index: 2100;
+  }
+  #toast.show { opacity: 1; }
+
+  button:focus-visible,
+  .hist-item:focus-visible,
+  .quick-card:focus-visible,
+  .cv-tab:focus-visible,
+  .cv-file-tab:focus-visible {
+    outline: 2px solid #88d8c3;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 1024px) {
+    #sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      transform: translateX(-100%);
+      z-index: 1200;
+      box-shadow: var(--shadow);
+      transition: transform .2s ease;
+    }
+    #sidebar.open { transform: translateX(0); }
+    #sidebar-toggle { display: inline-flex; align-items:center; justify-content:center; }
+    #header { padding: 0 10px; }
+    #quick-grid { grid-template-columns: 1fr; }
+    #canvas-panel.open { position: fixed; inset: 0; width: 100%; min-width: 0; max-width: none; z-index: 1190; }
+  }
+
+</style>
+</head>
+<body>
+<div id="bg-orbs">
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+  <div class="orb three"></div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div id="logo">
+    <div id="logo-icon">✦</div>
+    <div id="logo-text">
+      <h1>QuiltAI</h1>
+      <div class="model-tag" id="model-tag">Gemini 2.5 Flash</div>
+    </div>
+  </div>
+  
+  <!-- Mode Selector - UNIVERSAL / CODING -->
+  <div id="mode-selector">
+    <button type="button" class="mode-option universal active" data-mode="universal" aria-pressed="true">🌐 Universal</button>
+    <button type="button" class="mode-option coding" data-mode="coding" aria-pressed="false">💻 Coding</button>
+  </div>
+  
+  <!-- Web Search Toggle (Beta) -->
+  <div id="websearch-toggle" onclick="toggleWebSearch()">
+    <div class="label">
+      <span>🌐 Web Search</span>
+      <span class="beta">BETA</span>
+    </div>
+    <div class="toggle-switch"></div>
+  </div>
+  
+  <button id="new-chat-btn">＋ Neuer Chat</button>
+  
+  <div id="hist-label">CHAT-VERLAUF</div>
+  <div id="hist-search"><input id="hist-search-input" type="text" placeholder="Chats filtern..." /></div>
+  <div id="hist-list"></div>
+  
+  <div id="sidebar-foot">
+    <button class="foot-btn" id="settings-btn" title="Einstellungen">⚙️</button>
+    <span id="ver-lbl">v9.0 · QuiltAI Redesign</span>
+    <button class="foot-btn" id="clear-btn" title="Alle löschen">🗑️</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="header">
+    <button id="sidebar-toggle" aria-label="Sidebar öffnen/schließen">☰</button>
+    <div id="chat-title">Neuer Chat</div>
+    
+    <!-- Mode Indicator -->
+    <div id="mode-indicator" class="universal">
+      <span class="mode-icon">🌐</span>
+      <span class="mode-text">Universal-Modus</span>
+    </div>
+    
+    <button id="theme-btn" class="top-action" title="Theme wechseln">🎨 Theme</button>
+    <button id="shortcuts-btn" class="top-action" title="Shortcuts">⌨️</button>
+    <div id="status">Bereit</div>
+    <div id="websearch-indicator">
+      <span>🌐</span> Web Search aktiv
+    </div>
+    <button id="canvas-btn">📋 Kannwas öffnen</button>
+  </div>
+  
+  <div id="content">
+    <div id="chat-area">
+      <!-- Welcome -->
+      <div id="welcome">
+        <div class="star">✨</div>
+        <h2>Womit kann ich dir helfen?</h2>
+        <p id="welcome-subtitle">Universal-Modus · Alltagsfragen, Recherche, Kreatives · Web Search Beta</p>
+        
+        <div id="quick-grid" class="universal-grid">
+          <!-- Universelle Quick-Cards -->
+          <button type="button" class="quick-card universal-card" data-prompt="Was sind die aktuellen Top-News in der Technologiebranche diese Woche?">
+            <div class="qc-title">🌐 Aktuelle News</div>
+            <div class="qc-sub">Technologie · Web Search</div>
+          </button>
+          
+          <button type="button" class="quick-card universal-card" data-prompt="Erkläre mir die Theorie der Relativität einfach und verständlich.">
+            <div class="qc-title">🔬 Wissenschaft</div>
+            <div class="qc-sub">Relativitätstheorie erklärt</div>
+          </button>
+          
+          <button type="button" class="quick-card universal-card" data-prompt="Schreibe ein kreatives Gedicht über den Herbst.">
+            <div class="qc-title">📝 Kreatives</div>
+            <div class="qc-sub">Gedicht schreiben</div>
+          </button>
+          
+          <button type="button" class="quick-card universal-card" data-prompt="Wie kann ich meine Produktivität steigern? 5 Tipps.">
+            <div class="qc-title">⚡ Produktivität</div>
+            <div class="qc-sub">Tipps & Tricks</div>
+          </button>
+          
+          <!-- Coding-spezifische Cards (werden im Coding-Mode eingeblendet) -->
+          <button type="button" class="quick-card coding-card" style="display: none;" data-prompt="Erstelle eine responsive Landingpage mit HTML, CSS und JavaScript. Nutze //kannwas:creat:index.html, //kannwas:creat:style.css, //kannwas:creat:script.js">
+            <div class="qc-title">📄 Landingpage</div>
+            <div class="qc-sub">HTML/CSS/JS im Kannwas</div>
+          </button>
+          
+          <button type="button" class="quick-card coding-card" style="display: none;" data-prompt="Erstelle ein Snake-Spiel. Nutze //kannwas:creat:snake.html, //kannwas:creat:snake.js, //kannwas:creat:snake.css">
+            <div class="qc-title">🎮 Snake Spiel</div>
+            <div class="qc-sub">3 Dateien im Kannwas</div>
+          </button>
+          
+          <button type="button" class="quick-card coding-card" style="display: none;" data-prompt="Schreibe einen Python-Code für eine Todo-Liste mit GUI. //kannwas:creat:todo.py">
+            <div class="qc-title">🐍 Python App</div>
+            <div class="qc-sub">GUI-Todo im Kannwas</div>
+          </button>
+          
+          <button type="button" class="quick-card coding-card" style="display: none;" data-prompt="Erkläre mir asynchrone Programmierung in JavaScript mit Beispielen. //kannwas:creat:async.js">
+            <div class="qc-title">⚡ JavaScript</div>
+            <div class="qc-sub">Async/Await erklärt</div>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Messages -->
+      <div id="msgs"></div>
+      
+      <!-- Input -->
+      <div id="input-area">
+        <div id="input-box">
+          <textarea id="prompt" placeholder="Nachricht eingeben... (Enter für senden, Shift+Enter für neue Zeile)" rows="1"></textarea>
+          <button id="send-btn">↑</button>
+        </div>
+        <div id="footer-info">Gemini 2.5 Flash · <span id="mode-footer">Universal-Modus</span> · Web Search Beta</div>
+      </div>
+    </div>
+
+    <!-- KANNWAS PANEL (bleibt erhalten) -->
+    <div id="canvas-panel">
+      <div id="cv-header">
+        <span id="cv-name">📄 kannwas.txt</span>
+        <button class="cv-btn" onclick="renameActiveFile()">✏️ Umbenennen</button>
+        <button class="cv-btn" onclick="duplicateActiveFile()">🧬 Duplizieren</button>
+        <button class="cv-btn" onclick="downloadActiveFile()">💾 Download</button>
+        <button class="cv-btn word" onclick="exportToWord()">📝 Word export</button>
+        <button class="cv-btn run" onclick="runCode()">▶ Ausführen</button>
+        <button class="cv-btn" onclick="copyCanvas()">📋 Kopieren</button>
+        <button class="cv-btn close" onclick="closeCanvas()">✕</button>
+      </div>
+      
+      <div id="cv-file-tabs">
+        <div id="cv-file-tabs-inner"></div>
+        <button id="cv-new-file-btn" onclick="newCanvasFile()" title="Neue Datei">＋</button>
+      </div>
+      
+      <div id="cv-tabs">
+        <div class="cv-tab active" data-tab="code" onclick="switchTab('code')">Code</div>
+        <div class="cv-tab" data-tab="preview" onclick="switchTab('preview')">Vorschau</div>
+      </div>
+      
+      <div id="cv-code-wrap">
+        <textarea id="cv-code-editor" placeholder="// Code hier eingeben... (wird automatisch formatiert)"></textarea>
+        <div id="cv-statusbar">
+          <span id="cv-file-meta">Keine Datei · 0 Zeilen · 0 Zeichen</span>
+          <span id="cv-save-state" class="saved">Gespeichert</span>
+        </div>
+      </div>
+      
+      <div id="cv-preview-wrap">
+        <div id="cv-preview-placeholder">
+          <div class="ph-icon">🌐</div>
+          <div>▶ Ausführen drücken für HTML-Vorschau</div>
+          <div style="font-size:12px; color:#999">HTML wird im iframe angezeigt · Python/JS werden heruntergeladen</div>
+        </div>
+        <iframe id="cv-preview-iframe" style="display:none" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- API Key Dialog -->
+<div id="overlay">
+  <div id="dlg">
+    <div class="dlg-icon">✨</div>
+    <h2>QuiltAI</h2>
+    <p id="api-overlay-help">Gib deinen Gemini API Key ein für Zugang zu Gemini 2.5 Flash mit Universal- und Coding-Modus.</p>
+    <div id="api-overlay-model" style="background:#1a1a1a; border:1px solid var(--border); border-radius:10px; padding:12px; font-size:12px; color:var(--accent); text-align:center;">
+      🤖 Modell: gemini-2.5-flash · Universal AI mit Kannwas
+    </div>
+    <input type="password" id="api-key-input" placeholder="AIza..." />
+    <div id="dlg-err"></div>
+    <button id="dlg-submit">Verbinden →</button>
+    <p style="font-size:11px; color:#666;">Key erhalten unter <a id="api-key-link" href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--accent)">Google AI Studio</a></p>
+  </div>
+</div>
+
+<!-- Settings -->
+<div id="settings-panel">
+  <div id="settings-dlg">
+    <h2>⚙️ Einstellungen</h2>
+
+    <div class="s-label">AKTIVES MODELL</div>
+    <div id="active-model-box" style="background:#1a1a1a; border:1px solid var(--border); border-radius:10px; padding:12px; font-size:12px; color:var(--accent); margin-bottom:8px;">
+      🔒 Gemini 2.5 Flash (Universal & Coding)
+    </div>
+
+    <div class="s-label">API PROVIDER</div>
+    <select class="s-input" id="s-provider">
+      <option value="gemini">Gemini API</option>
+      <option value="openrouter">OpenRouter API (BETA)</option>
+    </select>
+
+    <div class="s-label">MAXIMALE TOKEN: <span id="s-tokens-lbl">4096</span></div>
+    <input type="range" class="s-input" id="s-tokens" min="512" max="8192" step="256" value="4096" style="padding:0; cursor:pointer">
+    
+    <div class="s-label">MODUS-EINSTELLUNGEN</div>
+    <div style="color:var(--text-muted); font-size:12px; margin-bottom:8px;">
+      🌐 <strong>Universal-Modus:</strong> Allgemeine Fragen, Recherche, Kreatives<br>
+      💻 <strong>Coding-Modus:</strong> Code-Generierung, Kannwas-Nutzung, //kannwas:creat: Befehle<br>
+      🔄 Kannwas bleibt in beiden Modi verfügbar
+    </div>
+
+    <div class="s-label">WEB SEARCH (BETA)</div>
+    <label style="display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px; margin-bottom:12px; cursor:pointer;">
+      <input type="checkbox" id="s-websearch" style="cursor:pointer">
+      Web Search in Antworten aktivieren
+    </label>
+    
+    <div class="s-row">
+      <button class="s-save" onclick="saveSettings()">Speichern</button>
+      <button class="s-cancel" onclick="closeSettings()">Abbrechen</button>
+    </div>
+    <button class="s-danger" onclick="resetKey()">⚠ API Key zurücksetzen</button>
+  </div>
+</div>
+
+
+<!-- Shortcuts -->
+<div id="shortcuts-panel">
+  <div id="shortcuts-dlg">
+    <h2>⌨️ Shortcuts</h2>
+    <div style="color:var(--text-secondary); font-size:13px; line-height:1.7">
+      <div><strong>Enter</strong> Nachricht senden</div>
+      <div><strong>Shift + Enter</strong> Zeilenumbruch</div>
+      <div><strong>Ctrl/Cmd + K</strong> Fokus auf Eingabe</div>
+      <div><strong>Ctrl/Cmd + J</strong> Theme wechseln</div>
+      <div><strong>Ctrl/Cmd + S</strong> Aktive Kannwas-Datei speichern</div>
+    </div>
+    <div class="s-row">
+      <button class="s-save" onclick="closeShortcuts()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── PROVIDER KONFIGURATION ──
+const PROVIDER_CONFIGS = {
+  gemini: {
+    id: 'gemini',
+    name: 'Gemini 2.5 Flash',
+    model: 'gemini-2.5-flash',
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+    keyPrefix: 'AIza',
+    keyLink: 'https://aistudio.google.com/app/apikey',
+    keyPlaceholder: 'AIza...',
+    providerLabel: 'Gemini API',
+  },
+  openrouter: {
+    id: 'openrouter',
+    name: 'OpenRouter Auto',
+    model: 'openrouter/auto',
+    endpoint: 'https://openrouter.ai/api/v1/chat/completions',
+    keyPrefix: 'sk-or-',
+    keyLink: 'https://openrouter.ai/keys',
+    keyPlaceholder: 'sk-or-...',
+    providerLabel: 'OpenRouter API (BETA)',
+  }
+};
+
+// System Prompts für verschiedene Modi
+const SYSTEM_PROMPTS = {
+  universal: `Du bist Quilt, ein universeller KI-Assistent für alle Arten von Fragen.
+
+DEINE IDENTITÄT:
+- Du heißt Quilt, entwickelt von QuiltAI
+- Du beantwortest Fragen zu ALLEN Themen: Allgemeinwissen, Wissenschaft, Kreatives, Alltag, etc.
+- Du antwortest auf Deutsch, präzise und hilfreich
+
+WEB SEARCH (wenn aktiviert):
+- Bei Fragen zu aktuellen Ereignissen, News, Börsendaten etc. nutzt du automatisch Web Search
+- Du gibst Quellenangaben (Citations) zu deinen Informationen
+- Die Quellen werden im Format [1](URL) im Text eingefügt
+
+FORMATIERUNG:
+- Verwende **fett** für wichtige Begriffe
+- Verwende *kursiv* für Hervorhebungen
+- Verwende Überschriften mit #, ##, ### für Struktur
+- Bei Codefragen: Nutze \`\`\`codeblöcke\`\`\` mit Sprachangabe
+
+KANNWAS (optional):
+- Bei Programmierfragen kannst du den Kannwas-Arbeitsbereich mit //kannwas:creat:datei.endung nutzen
+- Kannwas ist dein integrierter Datei-Arbeitsbereich in der App
+- Aber der Fokus liegt auf allgemeinen Antworten, nicht nur Coding`,
+
+  coding: `Du bist Quilt, ein spezialisierter Coding-Assistent mit Kannwas-Integration.
+
+DEINE IDENTITÄT:
+- Du heißt Quilt, entwickelt von QuiltAI
+- Du bist ein Experte für Code, Webentwicklung und Programmierung
+- Du antwortest auf Deutsch, präzise und mit vollständigen Code-Beispielen
+
+WEB SEARCH (wenn aktiviert):
+- Bei Fragen zu aktuellen Technologien, Frameworks, Bibliotheken nutzt du Web Search
+- Du gibst Quellenangaben zu Dokumentationen, Tutorials etc.
+
+KANNWAS-BEFEHLE (PFLICHT BEI CODE):
+1. //kannwas:creat:datei.endung - Erstellt NEUE Datei im Kannwas mit folgendem Codeblock
+2. //kannwas:open:datei.endung - Öffnet BESTEHENDE Datei im Kannwas
+
+WICHTIG:
+- Erkläre bei der ersten Nutzung kurz: "Kannwas ist der integrierte Datei-Workspace rechts im UI."
+- Verwende in Coding-Antworten primär die Kannwas-Befehle, nicht alte Legacy-Befehle
+
+BEISPIEL FÜR MEHRERE DATEIEN:
+//kannwas:creat:index.html
+\`\`\`html
+<!DOCTYPE html>
+<html>...</html>
+\`\`\`
+
+//kannwas:creat:style.css
+\`\`\`css
+body { ... }
+\`\`\`
+
+FORMATIERUNG:
+- Verwende **fett** für wichtige Begriffe
+- Verwende *kursiv* für Hervorhebungen
+- Code immer in \`\`\`codeblöcken\`\`\` mit Sprachangabe
+- Erkläre Code Schritt für Schritt`
+};
+
+// ── State ──
+let state = {
+  provider: localStorage.getItem('qa_provider') || 'gemini',
+  apiKey: '',
+  mode: localStorage.getItem('ai_mode') || 'universal', // 'universal' oder 'coding'
+  webSearchEnabled: localStorage.getItem('websearch_enabled') === 'true',
+  maxTokens: parseInt(localStorage.getItem('qa_tokens') || '4096'),
+  chats: JSON.parse(localStorage.getItem('qa_chats') || '[]'),
+  curId: null,
+  loading: false,
+  cvFiles: JSON.parse(localStorage.getItem('qa_kannwas_files') || '[]'), // [{name, code}]
+  cvActive: parseInt(localStorage.getItem('qa_kannwas_active') || '-1', 10),
+  cvDirty: false,
+  histFilter: '',
+  theme: localStorage.getItem('qa_theme') || 'aurora',
+};
+
+function getProviderConfig(provider = state.provider) {
+  return PROVIDER_CONFIGS[provider] || PROVIDER_CONFIGS.gemini;
+}
+
+function getStoredKey(provider = state.provider) {
+  return localStorage.getItem(`qa_key_${provider}`) || '';
+}
+
+function isValidApiKey(key, provider = state.provider) {
+  const config = getProviderConfig(provider);
+  return !!key && key.startsWith(config.keyPrefix);
+}
+
+function applyProviderToState(provider) {
+  state.provider = PROVIDER_CONFIGS[provider] ? provider : 'gemini';
+  state.apiKey = getStoredKey(state.provider);
+  localStorage.setItem('qa_provider', state.provider);
+}
+
+function updateProviderUI() {
+  const config = getProviderConfig();
+  const overlayHelp = document.getElementById('api-overlay-help');
+  const overlayModel = document.getElementById('api-overlay-model');
+  const keyInput = document.getElementById('api-key-input');
+  const keyLink = document.getElementById('api-key-link');
+  const activeModelBox = document.getElementById('active-model-box');
+
+  overlayHelp.textContent = `Gib deinen ${config.providerLabel} Key ein für Zugang zu ${config.name} mit Universal- und Coding-Modus.`;
+  overlayModel.textContent = `🤖 Modell: ${config.model} · Provider: ${config.providerLabel}`;
+  keyInput.placeholder = config.keyPlaceholder;
+  keyLink.href = config.keyLink;
+  keyLink.textContent = config.providerLabel === 'Gemini API' ? 'Google AI Studio' : 'OpenRouter';
+  activeModelBox.textContent = `🔒 ${config.name} · ${config.providerLabel}`;
+}
+
+// ── Init ──
+function init() {
+  applyProviderToState(state.provider);
+  applyTheme();
+  updateProviderUI();
+  updateUI();
+  updateModeUI();
+  applyModeCards();
+  renderHist();
+  
+  // API Key prüfen
+  if (!isValidApiKey(state.apiKey)) {
+    showOverlay();
+  } else {
+    hideOverlay();
+  }
+
+  // Web Search Toggle initialisieren
+  updateWebSearchToggle();
+  bindUIEvents();
+
+  // Event Listener
+  document.getElementById('api-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitKey();
+  });
+  
+  document.getElementById('prompt').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      send(); 
+    }
+  });
+  
+  document.getElementById('prompt').addEventListener('input', autoResize);
+  
+  // Canvas Editor Änderungen speichern
+  document.getElementById('cv-code-editor').addEventListener('input', function(e) {
+    if (state.cvActive >= 0 && state.cvFiles[state.cvActive]) {
+      state.cvFiles[state.cvActive].code = e.target.value;
+      state.cvDirty = true;
+      persistKannwas();
+      updateKannwasStatusbar();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      document.getElementById('prompt').focus();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
+      e.preventDefault();
+      toggleTheme();
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      closeShortcuts();
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      const panelOpen = document.getElementById('canvas-panel').classList.contains('open');
+      if (!panelOpen) return;
+      e.preventDefault();
+      downloadActiveFile();
+    }
+  });
+
+  if (state.cvFiles.length > 0) {
+    if (state.cvActive < 0 || state.cvActive >= state.cvFiles.length) {
+      state.cvActive = state.cvFiles.length - 1;
+    }
+    renderFileTabs();
+    renderActiveFile();
+    updateKannwasStatusbar();
+  }
+
+  document.getElementById('s-tokens').addEventListener('input', e => {
+    document.getElementById('s-tokens-lbl').textContent = e.target.value;
+  });
+
+  document.getElementById('hist-search-input').addEventListener('input', e => {
+    state.histFilter = e.target.value.trim().toLowerCase();
+    renderHist();
+  });
+}
+
+function bindUIEvents() {
+  document.querySelectorAll('.mode-option').forEach(option => {
+    option.addEventListener('click', () => switchMode(option.dataset.mode));
+  });
+
+  document.querySelectorAll('.quick-card').forEach(card => {
+    card.addEventListener('click', () => quickPrompt(card.dataset.prompt || ''));
+  });
+
+  document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+  document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+  document.getElementById('shortcuts-btn').addEventListener('click', openShortcuts);
+
+  document.addEventListener('click', event => {
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebar-toggle');
+    if (window.innerWidth > 1024 || !sidebar.classList.contains('open')) return;
+    if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+      sidebar.classList.remove('open');
+    }
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+function applyModeCards() {
+  const universalCards = document.querySelectorAll('.universal-card');
+  const codingCards = document.querySelectorAll('.coding-card');
+
+  if (state.mode === 'universal') {
+    universalCards.forEach(card => card.style.display = 'block');
+    codingCards.forEach(card => card.style.display = 'none');
+    document.getElementById('welcome-subtitle').textContent = 'Universal-Modus · Alltagsfragen, Recherche, Kreatives · Web Search Beta';
+  } else {
+    universalCards.forEach(card => card.style.display = 'none');
+    codingCards.forEach(card => card.style.display = 'block');
+    document.getElementById('welcome-subtitle').textContent = 'Coding-Modus · Programmierung, Webentwicklung, Kannwas · Web Search Beta';
+  }
+}
+
+// ── Mode Wechsel ──
+function switchMode(mode) {
+  if (!['universal', 'coding'].includes(mode)) return;
+  
+  state.mode = mode;
+  localStorage.setItem('ai_mode', mode);
+  
+  updateModeUI();
+  applyModeCards();
+  
+  toast(`Gewechselt zu ${mode === 'universal' ? 'Universal' : 'Coding'}-Modus`);
+}
+
+function updateModeUI() {
+  // Mode Selector Buttons
+  document.querySelectorAll('.mode-option').forEach(opt => {
+    opt.classList.remove('active');
+    opt.setAttribute('aria-pressed', 'false');
+    if (opt.dataset.mode === state.mode) {
+      opt.classList.add('active');
+      opt.setAttribute('aria-pressed', 'true');
+    }
+  });
+  
+  // Mode Indicator im Header
+  const indicator = document.getElementById('mode-indicator');
+  indicator.className = state.mode;
+  
+  const icon = indicator.querySelector('.mode-icon');
+  const text = indicator.querySelector('.mode-text');
+  
+  if (state.mode === 'universal') {
+    icon.textContent = '🌐';
+    text.textContent = 'Universal-Modus';
+    document.getElementById('mode-footer').textContent = 'Universal-Modus';
+  } else {
+    icon.textContent = '💻';
+    text.textContent = 'Coding-Modus';
+    document.getElementById('mode-footer').textContent = 'Coding-Modus';
+  }
+}
+
+
+function applyTheme() {
+  if (state.theme === 'sunrise') {
+    document.body.setAttribute('data-theme', 'sunrise');
+  } else {
+    document.body.removeAttribute('data-theme');
+  }
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'aurora' ? 'sunrise' : 'aurora';
+  localStorage.setItem('qa_theme', state.theme);
+  applyTheme();
+  toast(`Theme: ${state.theme === 'aurora' ? 'Aurora' : 'Sunrise'}`);
+}
+
+function openShortcuts() {
+  document.getElementById('shortcuts-panel').classList.add('open');
+}
+
+function closeShortcuts() {
+  document.getElementById('shortcuts-panel').classList.remove('open');
+}
+
+function updateUI() {
+  const config = getProviderConfig();
+  document.getElementById('model-tag').textContent = `${config.name} · ${state.mode === 'universal' ? 'Universal' : 'Coding'}`;
+  
+  // Web Search Indicator im Header
+  const indicator = document.getElementById('websearch-indicator');
+  if (state.webSearchEnabled) {
+    indicator.classList.add('active');
+  } else {
+    indicator.classList.remove('active');
+  }
+}
+
+// ── Web Search Toggle ──
+function toggleWebSearch() {
+  state.webSearchEnabled = !state.webSearchEnabled;
+  localStorage.setItem('websearch_enabled', state.webSearchEnabled);
+  updateWebSearchToggle();
+  updateUI();
+  toast(`Web Search ${state.webSearchEnabled ? 'aktiviert' : 'deaktiviert'} (Beta)`);
+}
+
+function updateWebSearchToggle() {
+  const toggle = document.getElementById('websearch-toggle');
+  if (state.webSearchEnabled) {
+    toggle.classList.add('active');
+  } else {
+    toggle.classList.remove('active');
+  }
+}
+
+// ── Overlay ──
+function showOverlay() { 
+  document.getElementById('overlay').classList.remove('hidden'); 
+}
+
+function hideOverlay() { 
+  document.getElementById('overlay').classList.add('hidden'); 
+}
+
+document.getElementById('dlg-submit').onclick = submitKey;
+
+function submitKey() {
+  const k = document.getElementById('api-key-input').value.trim();
+  const err = document.getElementById('dlg-err');
+  const config = getProviderConfig();
+
+  if (!isValidApiKey(k)) {
+    err.textContent = `❌ Key muss mit ${config.keyPrefix}... beginnen`;
+    return;
+  }
+
+  err.textContent = '';
+  state.apiKey = k;
+  localStorage.setItem(`qa_key_${state.provider}`, k);
+  hideOverlay();
+  toast(`Verbunden mit ${config.providerLabel} ✓`);
+}
+
+// ── Settings ──
+document.getElementById('settings-btn').onclick = () => {
+  document.getElementById('s-tokens').value = state.maxTokens;
+  document.getElementById('s-tokens-lbl').textContent = state.maxTokens;
+  document.getElementById('s-provider').value = state.provider;
+  document.getElementById('s-websearch').checked = state.webSearchEnabled;
+  document.getElementById('settings-panel').classList.add('open');
+};
+
+function closeSettings() { 
+  document.getElementById('settings-panel').classList.remove('open'); 
+}
+
+document.getElementById('shortcuts-panel').onclick = (e) => {
+  if (e.target.id === 'shortcuts-panel') closeShortcuts();
+};
+
+function saveSettings() {
+  const nextProvider = document.getElementById('s-provider').value;
+  const nextWebSearch = document.getElementById('s-websearch').checked;
+  state.maxTokens = parseInt(document.getElementById('s-tokens').value);
+  localStorage.setItem('qa_tokens', state.maxTokens);
+  state.webSearchEnabled = nextWebSearch;
+  localStorage.setItem('websearch_enabled', state.webSearchEnabled);
+
+  if (nextProvider !== state.provider) {
+    applyProviderToState(nextProvider);
+    updateProviderUI();
+  }
+
+  updateWebSearchToggle();
+  updateUI();
+  closeSettings();
+
+  if (!isValidApiKey(state.apiKey)) {
+    showOverlay();
+  }
+
+  toast('Einstellungen gespeichert ✓');
+}
+
+function resetKey() {
+  state.apiKey = '';
+  localStorage.removeItem(`qa_key_${state.provider}`);
+  closeSettings();
+  showOverlay();
+}
+
+// ── Chat history ──
+function renderHist() {
+  const el = document.getElementById('hist-list');
+  el.innerHTML = '';
+  
+  if (!state.chats.length) {
+    el.innerHTML = '<div style="padding:20px; font-size:12px; color:var(--text-muted); text-align:center">Noch keine Chats<br>Starte eine neue Unterhaltung</div>';
+    return;
+  }
+  
+  const list = state.chats.slice().reverse().filter(c => {
+    if (!state.histFilter) return true;
+    return (c.title || 'chat').toLowerCase().includes(state.histFilter);
+  });
+
+  if (!list.length) {
+    el.innerHTML = '<div style="padding:20px; font-size:12px; color:var(--text-muted); text-align:center">Keine Treffer für den Filter</div>';
+    return;
+  }
+
+  list.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'hist-item' + (c.id === state.curId ? ' active' : '');
+    d.textContent = '💬 ' + (c.title || 'Chat');
+    d.onclick = () => loadChat(c.id);
+    el.appendChild(d);
+  });
+}
+
+function newChat() {
+  state.curId = null;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('msgs').innerHTML = '';
+  document.getElementById('msgs').classList.remove('visible');
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('chat-title').textContent = 'Neuer Chat';
+  renderHist();
+}
+
+document.getElementById('new-chat-btn').onclick = newChat;
+
+function loadChat(id) {
+  const chat = state.chats.find(c => c.id === id);
+  if (!chat) return;
+  
+  state.curId = id;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('chat-title').textContent = chat.title || 'Chat';
+  document.getElementById('welcome').style.display = 'none';
+  
+  const msgs = document.getElementById('msgs');
+  msgs.innerHTML = '';
+  msgs.classList.add('visible');
+  
+  chat.messages.forEach(m => addBubble(m.role, m.content, m.metadata || null));
+  msgs.scrollTop = msgs.scrollHeight;
+  renderHist();
+}
+
+document.getElementById('clear-btn').onclick = () => {
+  if (!confirm('Alle Chats wirklich löschen?')) return;
+  state.chats = [];
+  localStorage.removeItem('qa_chats');
+  newChat();
+};
+
+// ── Send ──
+function send() {
+  const ta = document.getElementById('prompt');
+  const q = ta.value.trim();
+  
+  if (!q || state.loading) return;
+  
+  if (!isValidApiKey(state.apiKey)) { 
+    showOverlay(); 
+    return; 
+  }
+
+  if (!state.curId) {
+    state.curId = Date.now();
+    state.chats.push({ 
+      id: state.curId, 
+      title: q.slice(0, 40) + (q.length > 40 ? '...' : ''), 
+      messages: [] 
+    });
+    document.getElementById('chat-title').textContent = q.slice(0, 40);
+  }
+
+  ta.value = '';
+  ta.style.height = 'auto';
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('msgs').classList.add('visible');
+  
+  addBubble('user', q, null);
+  setStatus('Denkt nach...', true);
+  
+  state.loading = true;
+  document.getElementById('send-btn').disabled = true;
+  
+  callModel(q);
+}
+
+document.getElementById('send-btn').onclick = send;
+
+function quickPrompt(p) {
+  if (!p) return;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('prompt').value = p;
+  send();
+}
+
+function setStatus(txt, active) {
+  const s = document.getElementById('status');
+  s.innerHTML = txt;
+  s.style.color = active ? 'var(--accent)' : 'var(--text-muted)';
+}
+
+// ── MODEL API mit Modus-spezifischem Prompt ──
+async function callModel(query) {
+  const chat = state.chats.find(c => c.id === state.curId);
+  const config = getProviderConfig();
+
+  // System Prompt basierend auf Modus
+  const systemPrompt = SYSTEM_PROMPTS[state.mode] + (state.webSearchEnabled ? '\n\nWEB SEARCH IST AKTIVIERT - Nutze Google Search für aktuelle Informationen und füge Quellenangaben hinzu.' : '');
+
+  let bubbleEl = null;
+  let groundingMetadata = null;
+
+  try {
+    let fullText = '';
+
+    if (state.provider === 'gemini') {
+      const history = chat.messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+
+      const contents = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: `Verstanden. Ich bin im ${state.mode === 'universal' ? 'Universal' : 'Coding'}-Modus.` }] },
+        ...history,
+        { role: 'user', parts: [{ text: query }] }
+      ];
+
+      const requestBody = {
+        contents,
+        generationConfig: {
+          maxOutputTokens: Math.min(state.maxTokens, 4096),
+          temperature: 0.7,
+        }
+      };
+
+      if (state.webSearchEnabled) {
+        requestBody.tools = [{ google_search: {} }];
+      }
+
+      const res = await fetch(`${config.endpoint}?key=${state.apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      let data;
+      try { data = await res.json(); }
+      catch { throw new Error('Keine gültige Antwort vom Provider'); }
+
+      if (!res.ok || data.error) {
+        const msg = data.error?.message || JSON.stringify(data);
+        throw new Error('Provider Fehler: ' + msg);
+      }
+
+      fullText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      groundingMetadata = data.candidates?.[0]?.groundingMetadata || null;
+    } else {
+      const messages = [
+        { role: 'system', content: systemPrompt },
+        ...chat.messages.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: query }
+      ];
+
+      const requestBody = {
+        model: config.model,
+        messages,
+        temperature: 0.7,
+        max_tokens: Math.min(state.maxTokens, 4096),
+      };
+
+      const res = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${state.apiKey}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'QuiltAI'
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      let data;
+      try { data = await res.json(); }
+      catch { throw new Error('Keine gültige Antwort vom Provider'); }
+
+      if (!res.ok || data.error) {
+        const msg = data.error?.message || JSON.stringify(data);
+        throw new Error('Provider Fehler: ' + msg);
+      }
+
+      fullText = data.choices?.[0]?.message?.content || '';
+    }
+
+    if (!fullText) throw new Error('Leere Antwort');
+
+    bubbleEl = addBubble('assistant', '', true);
+    await typewrite(bubbleEl, fullText);
+
+    chat.messages.push({ role: 'user', content: query });
+    chat.messages.push({
+      role: 'assistant',
+      content: fullText,
+      metadata: groundingMetadata
+    });
+    localStorage.setItem('qa_chats', JSON.stringify(state.chats));
+
+    if (state.mode === 'coding') {
+      processKannwasCommands(fullText);
+    }
+
+    updateBubbleWithCitations(bubbleEl, fullText, groundingMetadata);
+
+    setStatus('Bereit', false);
+    renderHist();
+
+  } catch (e) {
+    if (!bubbleEl) bubbleEl = addBubble('assistant', '', true);
+    updateBubble(bubbleEl, '⚠️ Fehler: ' + e.message, true);
+    setStatus('Fehler', false);
+    console.error(e);
+  }
+
+  state.loading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+// ── Typewriter ──
+function typewrite(bubbleEl, fullText) {
+  return new Promise(resolve => {
+    const words = fullText.split(' ');
+    let i = 0;
+    const delay = Math.max(10, Math.min(30, 1500 / words.length));
+    
+    function next() {
+      if (i >= words.length) { 
+        resolve(); 
+        return; 
+      }
+      i++;
+      updateBubble(bubbleEl, words.slice(0, i).join(' '));
+      setTimeout(next, delay);
+    }
+    next();
+  });
+}
+
+// ── Bubbles ──
+function addBubble(role, text, metadata) {
+  const msgs = document.getElementById('msgs');
+  const row = document.createElement('div');
+  row.className = 'bubble';
+
+  const av = document.createElement('div');
+  av.className = 'av ' + (role === 'assistant' ? 'ai' : 'user');
+  av.textContent = role === 'assistant' ? '✦' : '👤';
+
+  const right = document.createElement('div');
+  right.style.flex = '1';
+
+  const btext = document.createElement('div');
+  btext.className = 'btext';
+
+  if (text) {
+    btext.innerHTML = renderMarkdown(text);
+  } else {
+    btext.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div>';
+  }
+
+  right.appendChild(btext);
+
+  if (role === 'assistant' && text) {
+    const tools = document.createElement('div');
+    tools.className = 'bubble-toolbar';
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-msg-btn';
+    copyBtn.textContent = 'Antwort kopieren';
+    copyBtn.onclick = () => { navigator.clipboard.writeText(text); toast('Antwort kopiert!'); };
+    tools.appendChild(copyBtn);
+    right.appendChild(tools);
+  }
+  
+  // Citations hinzufügen falls vorhanden
+  if (metadata && (metadata.webSearchQueries || metadata.groundingChunks)) {
+    const citationsDiv = renderCitations(metadata);
+    if (citationsDiv) {
+      right.appendChild(citationsDiv);
+    }
+  }
+  
+  row.appendChild(av);
+  row.appendChild(right);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  
+  return row;
+}
+
+function updateBubble(row, text, final = false) {
+  const right = row.children[1];
+  right.innerHTML = '';
+  
+  const btext = document.createElement('div');
+  btext.className = 'btext';
+  btext.innerHTML = renderMarkdown(text);
+  
+  right.appendChild(btext);
+  
+  document.getElementById('msgs').scrollTop = document.getElementById('msgs').scrollHeight;
+}
+
+function updateBubbleWithCitations(row, text, metadata) {
+  const right = row.children[1];
+  right.innerHTML = '';
+  
+  const btext = document.createElement('div');
+  btext.className = 'btext';
+  btext.innerHTML = renderMarkdown(text);
+  
+  right.appendChild(btext);
+
+  const tools = document.createElement('div');
+  tools.className = 'bubble-toolbar';
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'copy-msg-btn';
+  copyBtn.textContent = 'Antwort kopieren';
+  copyBtn.onclick = () => { navigator.clipboard.writeText(text); toast('Antwort kopiert!'); };
+  tools.appendChild(copyBtn);
+  right.appendChild(tools);
+  
+  // Citations hinzufügen
+  if (metadata) {
+    const citationsDiv = renderCitations(metadata);
+    if (citationsDiv) {
+      right.appendChild(citationsDiv);
+    }
+  }
+  
+  // Code-Aktionen nur im Coding-Modus anzeigen
+  if (state.mode === 'coding') {
+    const codeBlocks = extractAllCodeBlocks(text);
+    if (codeBlocks.length > 0) {
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'code-actions';
+      
+      codeBlocks.forEach((block, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'code-action-btn';
+        btn.innerHTML = `📋 Code ${index+1} kopieren`;
+        btn.onclick = () => {
+          navigator.clipboard.writeText(block.code);
+          toast('Code kopiert!');
+        };
+        actionsDiv.appendChild(btn);
+      });
+      
+      right.appendChild(actionsDiv);
+    }
+  }
+  
+  document.getElementById('msgs').scrollTop = document.getElementById('msgs').scrollHeight;
+}
+
+// ── Citations renderer ──
+function renderCitations(metadata) {
+  if (!metadata) return null;
+  
+  const container = document.createElement('div');
+  container.className = 'citations';
+  
+  // Web Search Queries
+  if (metadata.webSearchQueries && metadata.webSearchQueries.length > 0) {
+    const queriesDiv = document.createElement('div');
+    queriesDiv.className = 'search-queries';
+    queriesDiv.innerHTML = `🔍 Suchanfragen: ${metadata.webSearchQueries.join(' · ')}`;
+    container.appendChild(queriesDiv);
+  }
+  
+  // Grounding Chunks (Quellen)
+  if (metadata.groundingChunks && metadata.groundingChunks.length > 0) {
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'citations-title';
+    titleDiv.innerHTML = '📚 Quellen';
+    container.appendChild(titleDiv);
+    
+    const listDiv = document.createElement('div');
+    listDiv.className = 'citations-list';
+    
+    metadata.groundingChunks.forEach((chunk, index) => {
+      if (chunk.web) {
+        const link = document.createElement('a');
+        link.href = chunk.web.uri;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.className = 'citation-link';
+        link.innerHTML = `<span class="source-icon">🔗</span> ${index + 1}. ${chunk.web.title || 'Quelle'}`;
+        listDiv.appendChild(link);
+      }
+    });
+    
+    container.appendChild(listDiv);
+  }
+  
+  return container;
+}
+
+// ── MARKDOWN RENDERER ──
+function renderMarkdown(text) {
+  let t = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // Citations im Format [1](URL) als Links rendern
+  t = t.replace(/\[(\d+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-citation">[$1]</a>');
+  
+  // Codeblöcke
+  t = t.replace(/```(\w+)?\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const language = lang || 'text';
+    return `<pre><code class="language-${language}">${code.trim()}</code></pre>`;
+  });
+  
+  // Inline Code
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Überschriften
+  t = t.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  t = t.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  t = t.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  
+  // Fett und Kursiv
+  t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  
+  // Listen (geordnet und ungeordnet)
+  t = t.replace(/(?:^|\n)(?:- .+(?:\n|$))+/g, block => {
+    const items = block.trim().split('\n').map(line => `<li>${line.replace(/^-\s+/, '')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
+  t = t.replace(/(?:^|\n)(?:\d+\. .+(?:\n|$))+/g, block => {
+    const items = block.trim().split('\n').map(line => `<li>${line.replace(/^\d+\.\s+/, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+  
+  // Links
+  t = t.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">$1</a>');
+  
+  // Zeilenumbrüche
+  t = t.replace(/\n/g, '<br>');
+  
+  return t;
+}
+
+// ── Kannwas-Befehle verarbeiten (NUR IM CODING-MODUS) ──
+function processKannwasCommands(text) {
+  if (state.mode !== 'coding') return; // Nur im Coding-Modus
+  
+  // 1. //kannwas:creat:datei.endung (legacy //canvas:create wird weiterhin unterstützt)
+  const createRegex = /\/\/(?:kannwas:creat|canvas:create):([^\s]+)\s*```(?:\w+)?\n([\s\S]*?)```/g;
+  let match;
+  while ((match = createRegex.exec(text)) !== null) {
+    const filename = match[1].trim();
+    const code = match[2].trim();
+    createOrUpdateCanvasFile(filename, code);
+  }
+  
+  // 2. //kannwas:open:datei.endung (legacy //canvas:open wird weiterhin unterstützt)
+  const openRegex = /\/\/(?:kannwas:open|canvas:open):([^\s]+)/g;
+  while ((match = openRegex.exec(text)) !== null) {
+    const filename = match[1].trim();
+    openCanvasFile(filename);
+  }
+}
+
+function createOrUpdateCanvasFile(filename, code) {
+  const existing = state.cvFiles.findIndex(f => f.name === filename);
+  if (existing >= 0) {
+    state.cvFiles[existing].code = code;
+    state.cvActive = existing;
+  } else {
+    state.cvFiles.push({ name: filename, code: code });
+    state.cvActive = state.cvFiles.length - 1;
+  }
+  
+  renderFileTabs();
+  renderActiveFile();
+  state.cvDirty = false;
+  persistKannwas();
+  updateKannwasStatusbar();
+  document.getElementById('canvas-panel').classList.add('open');
+  toast(`📄 ${filename} ${existing >= 0 ? 'aktualisiert' : 'erstellt'}`);
+}
+
+function openCanvasFile(filename) {
+  const index = state.cvFiles.findIndex(f => f.name === filename);
+  if (index >= 0) {
+    state.cvActive = index;
+    renderFileTabs();
+    renderActiveFile();
+    state.cvDirty = false;
+    persistKannwas();
+    updateKannwasStatusbar();
+    document.getElementById('canvas-panel').classList.add('open');
+    switchTab('code');
+    toast(`📂 ${filename} geöffnet`);
+  } else {
+    toast(`⚠️ Datei ${filename} nicht gefunden`);
+  }
+}
+
+function extractAllCodeBlocks(text) {
+  const blocks = [];
+  const re = /```(\w+)?\n?([\s\S]*?)```/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    blocks.push({ lang: (m[1] || 'text').toLowerCase(), code: m[2].trim() });
+  }
+  return blocks;
+}
+
+// ── Canvas File System ──
+const EXT_MAP = { 
+  html:'html', javascript:'js', js:'js', python:'py', py:'py',
+  css:'css', typescript:'ts', ts:'ts', bash:'sh', sh:'sh',
+  json:'json', jsx:'jsx', rust:'rs', go:'go', sql:'sql', 
+  markdown:'md', md:'md', txt:'txt', text:'txt'
+};
+
+function renderFileTabs() {
+  const inner = document.getElementById('cv-file-tabs-inner');
+  inner.innerHTML = '';
+  
+  state.cvFiles.forEach((file, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'cv-file-tab' + (i === state.cvActive ? ' active' : '');
+    tab.onclick = () => switchFileTab(i);
+
+    const name = document.createElement('span');
+    name.textContent = file.name;
+    tab.appendChild(name);
+
+    const close = document.createElement('span');
+    close.className = 'tab-close';
+    close.textContent = '×';
+    close.onclick = (e) => { 
+      e.stopPropagation(); 
+      closeFileTab(i); 
+    };
+    tab.appendChild(close);
+
+    inner.appendChild(tab);
+  });
+}
+
+function switchFileTab(index) {
+  if (index < 0 || index >= state.cvFiles.length) return;
+  state.cvActive = index;
+  state.cvDirty = false;
+  persistKannwas();
+  renderFileTabs();
+  renderActiveFile();
+  updateKannwasStatusbar();
+}
+
+function closeFileTab(index) {
+  state.cvFiles.splice(index, 1);
+  if (state.cvFiles.length === 0) {
+    state.cvActive = -1;
+    persistKannwas();
+    updateKannwasStatusbar();
+    closeCanvas();
+    return;
+  }
+  state.cvActive = Math.min(state.cvActive, state.cvFiles.length - 1);
+  persistKannwas();
+  switchFileTab(state.cvActive);
+}
+
+function renderActiveFile() {
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    document.getElementById('cv-name').textContent = '📄 Keine Datei';
+    document.getElementById('cv-code-editor').value = '';
+    updateKannwasStatusbar();
+    return;
+  }
+  
+  const file = state.cvFiles[state.cvActive];
+  document.getElementById('cv-name').textContent = `📄 ${file.name}`;
+  document.getElementById('cv-code-editor').value = file.code || '';
+  updateKannwasStatusbar();
+}
+
+function newCanvasFile() {
+  const name = prompt('Dateiname (z.B. script.js, index.html):', 'neu.txt');
+  if (!name) return;
+  const normalizedName = name.trim();
+  if (!normalizedName) return;
+  if (state.cvFiles.some(f => f.name === normalizedName)) {
+    toast('⚠️ Dateiname existiert bereits');
+    return;
+  }
+  
+  state.cvFiles.push({ name: normalizedName, code: '' });
+  state.cvActive = state.cvFiles.length - 1;
+  state.cvDirty = false;
+  renderFileTabs();
+  renderActiveFile();
+  persistKannwas();
+  updateKannwasStatusbar();
+  document.getElementById('canvas-panel').classList.add('open');
+  toast(`📄 ${normalizedName} erstellt`);
+}
+
+function renameActiveFile() {
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    toast('Keine Datei zum Umbenennen');
+    return;
+  }
+  const current = state.cvFiles[state.cvActive].name;
+  const next = prompt('Neuer Dateiname:', current);
+  if (!next) return;
+  const trimmed = next.trim();
+  if (!trimmed || trimmed === current) return;
+  if (state.cvFiles.some((f, idx) => idx !== state.cvActive && f.name === trimmed)) {
+    toast('⚠️ Dateiname existiert bereits');
+    return;
+  }
+  state.cvFiles[state.cvActive].name = trimmed;
+  renderFileTabs();
+  renderActiveFile();
+  persistKannwas();
+  updateKannwasStatusbar();
+  toast(`✏️ Umbenannt zu ${trimmed}`);
+}
+
+function duplicateActiveFile() {
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    toast('Keine Datei zum Duplizieren');
+    return;
+  }
+  const src = state.cvFiles[state.cvActive];
+  const parts = src.name.split('.');
+  const ext = parts.length > 1 ? `.${parts.pop()}` : '';
+  const base = parts.join('.') || src.name;
+  let i = 1;
+  let candidate = `${base}_copy${ext}`;
+  while (state.cvFiles.some(f => f.name === candidate)) {
+    i++;
+    candidate = `${base}_copy${i}${ext}`;
+  }
+  state.cvFiles.push({ name: candidate, code: src.code });
+  state.cvActive = state.cvFiles.length - 1;
+  state.cvDirty = false;
+  renderFileTabs();
+  renderActiveFile();
+  persistKannwas();
+  updateKannwasStatusbar();
+  toast(`🧬 ${candidate} erstellt`);
+}
+
+function downloadActiveFile() {
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    toast('Keine Datei zum Download');
+    return;
+  }
+  const file = state.cvFiles[state.cvActive];
+  const blob = new Blob([file.code || ''], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  state.cvDirty = false;
+  updateKannwasStatusbar();
+  toast(`💾 ${file.name} heruntergeladen`);
+}
+
+function persistKannwas() {
+  localStorage.setItem('qa_kannwas_files', JSON.stringify(state.cvFiles));
+  localStorage.setItem('qa_kannwas_active', String(state.cvActive));
+}
+
+function updateKannwasStatusbar() {
+  const meta = document.getElementById('cv-file-meta');
+  const save = document.getElementById('cv-save-state');
+  if (!meta || !save) return;
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    meta.textContent = 'Keine Datei · 0 Zeilen · 0 Zeichen';
+    save.textContent = 'Gespeichert';
+    save.className = 'saved';
+    return;
+  }
+  const file = state.cvFiles[state.cvActive];
+  const code = file.code || '';
+  const lines = code ? code.split('\n').length : 0;
+  const ext = (file.name.split('.').pop() || 'txt').toLowerCase();
+  meta.textContent = `${file.name} · ${EXT_MAP[ext] || ext} · ${lines} Zeilen · ${code.length} Zeichen`;
+  save.textContent = state.cvDirty ? 'Ungespeichert' : 'Gespeichert';
+  save.className = state.cvDirty ? 'dirty' : 'saved';
+}
+
+function closeCanvas() {
+  document.getElementById('canvas-panel').classList.remove('open');
+}
+
+document.getElementById('canvas-btn').onclick = () => {
+  const p = document.getElementById('canvas-panel');
+  if (p.classList.contains('open')) {
+    closeCanvas();
+  } else {
+    p.classList.add('open');
+    if (state.cvActive >= 0) renderActiveFile();
+  }
+};
+
+function switchTab(tab) {
+  document.querySelectorAll('.cv-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  
+  const codeWrap = document.getElementById('cv-code-wrap');
+  const previewWrap = document.getElementById('cv-preview-wrap');
+  
+  if (tab === 'code') {
+    codeWrap.style.display = 'flex';
+    previewWrap.classList.remove('active');
+  } else {
+    codeWrap.style.display = 'none';
+    previewWrap.classList.add('active');
+  }
+}
+
+function copyCanvas() {
+  const code = document.getElementById('cv-code-editor').value;
+  if (code) {
+    navigator.clipboard.writeText(code).then(() => toast('📋 Code kopiert!'));
+  }
+}
+
+// ── WORD EXPORT ──
+function exportToWord() {
+  if (state.cvActive < 0 || !state.cvFiles[state.cvActive]) {
+    toast('Keine Datei zum Exportieren');
+    return;
+  }
+  
+  const file = state.cvFiles[state.cvActive];
+  const modeText = state.mode === 'universal' ? 'Universal-Modus' : 'Coding-Modus';
+  const content = `
+    <html>
+    <head>
+      <title>${file.name}</title>
+      <style>
+        body { font-family: 'Courier New', monospace; line-height: 1.6; padding: 40px; }
+        pre { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        h1 { color: #4285F4; }
+      </style>
+    </head>
+    <body>
+      <h1>📄 ${file.name}</h1>
+      <pre>${file.code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+      <p><em>Exportiert von QuiltAI · Gemini 2.5 Flash · ${modeText} · ${state.webSearchEnabled ? 'Web Search' : ''}</em></p>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob([content], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name.replace(/\.[^/.]+$/, '') + '_export.doc';
+  a.click();
+  
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('📝 Word-Dokument erstellt');
+}
+
+// ── RUN CODE ──
+function runCode() {
+  const code = document.getElementById('cv-code-editor').value;
+  if (!code) return;
+  
+  const filename = state.cvFiles[state.cvActive]?.name || '';
+  const ext = filename.split('.').pop().toLowerCase();
+  const isHtml = ext === 'html' || ext === 'htm';
+
+  if (isHtml) {
+    const iframe = document.getElementById('cv-preview-iframe');
+    const placeholder = document.getElementById('cv-preview-placeholder');
+    iframe.style.display = 'block';
+    placeholder.style.display = 'none';
+    
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.open(); 
+    doc.write(code); 
+    doc.close();
+    
+    switchTab('preview');
+    toast('🌐 Vorschau geladen');
+  } else {
+    const mime = ext === 'py' ? 'text/x-python' : 'text/plain';
+    const blob = new Blob([code], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; 
+    a.download = filename || `code.${ext || 'txt'}`; 
+    a.click();
+    
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`📥 ${a.download} heruntergeladen`);
+  }
+}
+
+// ── Helpers ──
+function autoResize() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Start
+init();
+</script>
+</body>
+</html>
