@@ -1,0 +1,152 @@
+{
+  "name": "quiltai",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.0.1",
+  "publisher": "quiltycode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:quiltai.sidebar",
+    "onCommand:quiltai.openAssistant",
+    "onCommand:quiltai.ask",
+    "onCommand:quiltai.explainSelection",
+    "onCommand:quiltai.generateDocComment",
+    "onCommand:quiltai.auditWorkspace",
+    "onCommand:quiltai.runSystemCommand"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "quiltai.openAssistant",
+        "title": "%command.openAssistant%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "quiltai.ask",
+        "title": "%command.ask%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "quiltai.explainSelection",
+        "title": "%command.explainSelection%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "quiltai.generateDocComment",
+        "title": "%command.generateDocComment%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "quiltai.auditWorkspace",
+        "title": "%command.auditWorkspace%",
+        "category": "%command.category%"
+      },
+      {
+        "command": "quiltai.runSystemCommand",
+        "title": "%command.runSystemCommand%",
+        "category": "%command.category%"
+      }
+    ],
+    "configuration": {
+      "title": "%config.title%",
+      "properties": {
+        "quiltai.maxContextLines": {
+          "type": "number",
+          "default": 120,
+          "minimum": 20,
+          "maximum": 400,
+          "description": "%config.maxContextLines%"
+        },
+        "quiltai.includeCodeFenceLanguage": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.includeCodeFenceLanguage%"
+        },
+        "quiltai.provider": {
+          "type": "string",
+          "enum": [
+            "openrouter",
+            "googleGemini"
+          ],
+          "default": "openrouter",
+          "description": "%config.provider%"
+        },
+        "quiltai.googleGeminiApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.googleGeminiApiKey%"
+        },
+        "quiltai.googleGeminiBaseUrl": {
+          "type": "string",
+          "default": "https://generativelanguage.googleapis.com/v1beta",
+          "description": "%config.googleGeminiBaseUrl%"
+        },
+        "quiltai.googleGeminiModel": {
+          "type": "string",
+          "default": "gemini-2.5-pro",
+          "description": "%config.googleGeminiModel%"
+        },
+        "quiltai.openRouterApiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%config.openRouterApiKey%"
+        },
+        "quiltai.openRouterBaseUrl": {
+          "type": "string",
+          "default": "https://openrouter.ai/api/v1",
+          "description": "%config.openRouterBaseUrl%"
+        },
+        "quiltai.openRouterModel": {
+          "type": "string",
+          "default": "google/gemini-2.5-pro",
+          "description": "%config.openRouterModel%"
+        },
+        "quiltai.systemPrompt": {
+          "type": "string",
+          "default": "You are QuiltAI, an expert coding assistant for QuiltyCode. You can plan, edit files, and run commands when needed.",
+          "description": "%config.systemPrompt%"
+        },
+        "quiltai.allowAutoWrite": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.allowAutoWrite%"
+        },
+        "quiltai.allowAutoCommandExecution": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.allowAutoCommandExecution%"
+        },
+        "quiltai.enableSystemAccess": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.enableSystemAccess%"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "quiltai",
+          "title": "%view.container.title%",
+          "icon": "media/quiltai.svg"
+        }
+      ]
+    },
+    "views": {
+      "quiltai": [
+        {
+          "id": "quiltai.sidebar",
+          "name": "%view.sidebar.name%"
+        }
+      ]
+    }
+  }
+}

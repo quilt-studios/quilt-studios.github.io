@@ -1,27 +1,19 @@
-# Quilt Studios
+# QuiltyCode
 
-## Installation
+QuiltyCode is a deeply customized VS Code fork focused on an AI-native coding workflow.
 
-### NPM
+## What Changed in This Fork
 
-To install the package via npm:
-```bash
-npm install quilt-studios
-```
+- Full product rebrand from Code - OSS to QuiltyCode identifiers.
+- Built-in QuiltAI extension with OpenRouter + Google Gemini support.
+- First-run AI provider onboarding and API key setup.
+- Multi-chat assistant UX with persistent chats and activity timeline.
+- Autonomous coding actions (`quilt-edit` and `quilt-cmd`) with safety gates.
+- Linux AppImage packaging script for distributing QuiltyCode quickly.
 
-### GitHub
+## Repository Base
 
-You can clone the repository directly from GitHub:
-```bash
-git clone https://github.com/quilt-studios/quilt-studios.github.io.git
-```
-
-### Docker
-
-To run the application using Docker:
-```bash
-docker pull quilt-studios/quilt-studios
-```
+This repository is based on Microsoft's VS Code codebase and remains MIT licensed.
 
 ### Codespaces
 

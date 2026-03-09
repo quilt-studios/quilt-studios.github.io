@@ -1,37 +1,37 @@
 {
-	"nameShort": "Code - OSS",
-	"nameLong": "Code - OSS",
-	"applicationName": "code-oss",
-	"dataFolderName": ".vscode-oss",
-	"win32MutexName": "vscodeoss",
+	"nameShort": "QuiltyCode",
+	"nameLong": "QuiltyCode",
+	"applicationName": "quiltycode",
+	"dataFolderName": ".quiltycode",
+	"win32MutexName": "quiltycode",
 	"licenseName": "MIT",
 	"licenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
 	"serverLicenseUrl": "https://github.com/microsoft/vscode/blob/main/LICENSE.txt",
 	"serverGreeting": [],
 	"serverLicense": [],
 	"serverLicensePrompt": "",
-	"serverApplicationName": "code-server-oss",
-	"serverDataFolderName": ".vscode-server-oss",
-	"tunnelApplicationName": "code-tunnel-oss",
-	"win32DirName": "Microsoft Code OSS",
-	"win32NameVersion": "Microsoft Code OSS",
-	"win32RegValueName": "CodeOSS",
+	"serverApplicationName": "quiltycode-server",
+	"serverDataFolderName": ".quiltycode-server",
+	"tunnelApplicationName": "quiltycode-tunnel",
+	"win32DirName": "QuiltyCode",
+	"win32NameVersion": "QuiltyCode",
+	"win32RegValueName": "QuiltyCode",
 	"win32x64AppId": "{{D77B7E06-80BA-4137-BCF4-654B95CCEBC5}",
 	"win32arm64AppId": "{{D1ACE434-89C5-48D1-88D3-E2991DF85475}",
 	"win32x64UserAppId": "{{CC6B787D-37A0-49E8-AE24-8559A032BE0C}",
 	"win32arm64UserAppId": "{{3AEBF0C8-F733-4AD4-BADE-FDB816D53D7B}",
 	"win32AppUserModelId": "Microsoft.CodeOSS",
-	"win32ShellNameShort": "C&ode - OSS",
-	"win32TunnelServiceMutex": "vscodeoss-tunnelservice",
-	"win32TunnelMutex": "vscodeoss-tunnel",
-	"darwinBundleIdentifier": "com.visualstudio.code.oss",
+	"win32ShellNameShort": "&QuiltyCode",
+	"win32TunnelServiceMutex": "quiltycode-tunnelservice",
+	"win32TunnelMutex": "quiltycode-tunnel",
+	"darwinBundleIdentifier": "io.quiltstudios.quiltycode",
 	"darwinProfileUUID": "47827DD9-4734-49A0-AF80-7E19B11495CC",
 	"darwinProfilePayloadUUID": "CF808BE7-53F3-46C6-A7E2-7EDB98A5E959",
-	"linuxIconName": "code-oss",
+	"linuxIconName": "quiltycode",
 	"licenseFileName": "LICENSE.txt",
 	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
 	"nodejsRepository": "https://nodejs.org",
-	"urlProtocol": "code-oss",
+	"urlProtocol": "quiltycode",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
 	"builtInExtensions": [
 		{
@@ -80,6 +80,22 @@
 					"flags": "verified"
 				},
 				"publisherDisplayName": "Microsoft"
+			}
+		},
+		{
+			"name": "ms-python.python",
+			"version": "2026.2.0",
+			"sha256": "f958e2df01d4eb4cdd4455728afd0576c0de9a8bd892e1a5e2603f612d1004f6",
+			"repo": "https://github.com/microsoft/vscode-python",
+			"metadata": {
+				"id": "ms-python.python",
+				"publisherId": {
+					"publisherId": "ms-python",
+					"publisherName": "ms-python",
+					"displayName": "ms-python",
+					"flags": "verified"
+				},
+				"publisherDisplayName": "ms-python"
 			}
 		}
 	],
