@@ -10,6 +10,24 @@ QuiltyCode is a deeply customized VS Code fork focused on an AI-native coding wo
 - Multi-chat assistant UX with persistent chats and activity timeline.
 - Autonomous coding actions (`quilt-edit` and `quilt-cmd`) with safety gates.
 - Linux AppImage packaging script for distributing QuiltyCode quickly.
+- Debian packaging helper script (`scripts/debbuilder.sh`).
+- Windows packaging helpers (`scripts/exebuilder.sh` and `scripts/exebuilder.bat`).
+- AppImage wrapper builder script (`scripts/appimage-builder.sh`).
+- QuiltAI UI upgrade with richer chat controls and workflow actions.
+- QuiltAI improvements including provider toggle, template prompts, transcript export, retry/copy actions, and chat rename/duplicate controls.
+- Automatic install attempt for OpenAI Codex and Claude Chat extensions on first QuiltAI onboarding.
+- Ten new QuiltAI productivity features:
+  1. Rename chat.
+  2. Duplicate chat.
+  3. Retry last prompt.
+  4. Copy last answer.
+  5. Save transcript to Markdown.
+  6. Clear activity timeline.
+  7. One-click provider toggle.
+  8. Prompt template pills (Plan/Code/Run/Test).
+  9. Larger activity history buffer.
+  10. One-time recommended extension auto-install.
+
 
 ## Repository Base
 

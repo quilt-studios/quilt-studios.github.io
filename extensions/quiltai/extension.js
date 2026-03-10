@@ -8,9 +8,11 @@ const qc = require('vscode');
 
 const MAX_SESSIONS = 40;
 const MAX_MESSAGES_PER_SESSION = 120;
+const MAX_ACTIVITY_ITEMS = 160;
 const SESSIONS_STORAGE_KEY = 'quiltai.sessions.v1';
 const ACTIVE_SESSION_STORAGE_KEY = 'quiltai.activeSession.v1';
 const ONBOARDING_STORAGE_KEY = 'quiltai.onboarded.v1';
+const PREINSTALLED_EXTENSION_KEY = 'quiltai.preinstalledExtensions.v1';
 
 /**
  * @param {qc.ExtensionContext} context
@@ -40,6 +42,10 @@ class QuiltAiAssistant {
 		this._activeSessionId = this._context.globalState.get(ACTIVE_SESSION_STORAGE_KEY);
 		this._ensureSession(qc.l10n.t('New Chat'));
 		void this._ensureProviderSetupOnce();
+	}
+
+	_findActiveSession() {
+		return this._sessions.find(session => session.id === this._activeSessionId);
 	}
 
 	async _ensureProviderSetupOnce() {
@@ -78,7 +84,23 @@ class QuiltAiAssistant {
 		}
 
 		await this._context.globalState.update(ONBOARDING_STORAGE_KEY, true);
+		await this._installRecommendedExtensionsOnce();
 		void qc.window.showInformationMessage(qc.l10n.t('QuiltAI is ready in QuiltyCode.'));
+	}
+
+	async _installRecommendedExtensionsOnce() {
+		if (this._context.globalState.get(PREINSTALLED_EXTENSION_KEY, false)) {
+			return;
+		}
+		const extensionIds = ['openai.chatgpt-codex', 'anthropic.claude-code'];
+		for (const extensionId of extensionIds) {
+			try {
+				await qc.commands.executeCommand('workbench.extensions.installExtension', extensionId);
+			} catch (error) {
+				this._showInOutput(`Default extension install skipped for ${extensionId}: ${error instanceof Error ? error.message : String(error)}`);
+			}
+		}
+		await this._context.globalState.update(PREINSTALLED_EXTENSION_KEY, true);
 	}
 
 	dispose() {
@@ -124,6 +146,54 @@ class QuiltAiAssistant {
 				case 'deleteChat':
 					if (typeof message.sessionId === 'string') {
 						this._deleteSession(message.sessionId);
+					}
+					break;
+				case 'renameChat':
+					if (typeof message.sessionId === 'string' && typeof message.title === 'string') {
+						this._renameSession(message.sessionId, message.title);
+					}
+					break;
+				case 'duplicateChat':
+					if (typeof message.sessionId === 'string') {
+						this._duplicateSession(message.sessionId);
+					}
+					break;
+				case 'clearActivity': {
+					const activeSession = this._findActiveSession();
+					if (activeSession) {
+						activeSession.activities = [];
+						await this._persistSessions();
+					}
+					break;
+				}
+				case 'retryLastPrompt': {
+					const activeSession = this._findActiveSession();
+					const lastUserMessage = activeSession?.entries?.slice().reverse().find(entry => entry.role === 'user');
+					if (lastUserMessage?.content) {
+						await this.handlePrompt(String(lastUserMessage.content), this.getDefaultModel());
+					}
+					break;
+				}
+				case 'saveTranscript':
+					await this._saveActiveTranscript();
+					break;
+				case 'copyLastAnswer': {
+					const activeSession = this._findActiveSession();
+					const lastAssistantMessage = activeSession?.entries?.slice().reverse().find(entry => entry.role === 'assistant' && !entry.isError);
+					if (lastAssistantMessage?.content) {
+						await qc.env.clipboard.writeText(String(lastAssistantMessage.content));
+						void qc.window.showInformationMessage(qc.l10n.t('Copied latest QuiltAI answer to clipboard.'));
+					}
+					break;
+				}
+				case 'useTemplate':
+					if (typeof message.template === 'string') {
+						await this.handlePrompt(message.template, this.getDefaultModel());
+					}
+					break;
+				case 'switchProvider':
+					if (message.provider === 'openrouter' || message.provider === 'googleGemini') {
+						await qc.workspace.getConfiguration('quiltai').update('provider', message.provider, qc.ConfigurationTarget.Global);
 					}
 					break;
 				case 'ask': {
@@ -496,7 +566,7 @@ class QuiltAiAssistant {
 			kind,
 			detail
 		});
-		session.activities = session.activities.slice(0, 20);
+		session.activities = session.activities.slice(0, MAX_ACTIVITY_ITEMS);
 	}
 
 	_deriveTitleFromEntries(entries) {
@@ -505,6 +575,61 @@ class QuiltAiAssistant {
 			return 'New Chat';
 		}
 		return firstUser.content.trim().slice(0, 36) || 'New Chat';
+	}
+
+	_renameSession(sessionId, title) {
+		const normalizedTitle = title.trim().slice(0, 80);
+		if (!normalizedTitle) {
+			return;
+		}
+		const target = this._sessions.find(session => session.id === sessionId);
+		if (!target) {
+			return;
+		}
+		target.title = normalizedTitle;
+		target.updatedAt = Date.now();
+		void this._persistSessions();
+	}
+
+	_duplicateSession(sessionId) {
+		const source = this._sessions.find(session => session.id === sessionId);
+		if (!source) {
+			return;
+		}
+		const duplicate = {
+			id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+			title: `${source.title} Copy`,
+			createdAt: Date.now(),
+			updatedAt: Date.now(),
+			entries: [...source.entries],
+			activities: [...(source.activities || [])]
+		};
+		this._sessions.unshift(duplicate);
+		this._sessions = this._sessions.slice(0, MAX_SESSIONS);
+		this._activeSessionId = duplicate.id;
+		void this._persistSessions();
+	}
+
+	async _saveActiveTranscript() {
+		const active = this._findActiveSession();
+		if (!active) {
+			return;
+		}
+		const content = [
+			`# ${active.title}`,
+			'',
+			...active.entries.map(entry => `## ${entry.role}${entry.model ? ` (${entry.model})` : ''}\n\n${entry.content}`)
+		].join('\n\n');
+		const uri = await qc.window.showSaveDialog({
+			title: qc.l10n.t('Save QuiltAI Transcript'),
+			defaultUri: qc.Uri.file(`${active.title.replace(/[^a-z0-9-_]+/giu, '-').toLowerCase() || 'quiltai-chat'}.md`),
+			filters: { Markdown: ['md'], Text: ['txt'] }
+		});
+		if (!uri) {
+			return;
+		}
+		await qc.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+		void qc.window.showInformationMessage(qc.l10n.t('Saved transcript to {0}', uri.fsPath));
 	}
 
 	_createSession(title) {
@@ -600,7 +725,7 @@ class QuiltAiAssistant {
 		.chat-del { position: absolute; right: 6px; top: 6px; border: none; background: transparent; color: var(--vscode-descriptionForeground); cursor: pointer; }
 		.input, textarea { width: 100%; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--vscode-input-border); background: var(--vscode-input-background); color: var(--vscode-input-foreground); padding: 8px; }
 		textarea { min-height: 76px; max-height: 150px; resize: vertical; }
-		.toolbar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
+		.toolbar { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; padding: 0 12px 8px; }
 		.activity { border-top: 1px solid var(--vscode-editorWidget-border); border-bottom: 1px solid var(--vscode-editorWidget-border); padding: 8px 12px; max-height: 128px; overflow: auto; font-size: 11px; }
 		.activity-item { padding: 3px 0; border-top: 1px solid var(--vscode-editorWidget-border); }
 		.activity-item:first-child { border-top: none; }
@@ -620,7 +745,7 @@ class QuiltAiAssistant {
 		<div class="panel sidebar">
 			<div class="topbar">
 				<strong>Chats</strong>
-				<button id="newChat" class="btn">+ New</button>
+				<div style="display:flex; gap:6px"><button id="duplicateChat" class="btn">Duplicate</button><button id="newChat" class="btn">+ New</button></div>
 			</div>
 			<div id="sessionList"></div>
 		</div>
@@ -632,11 +757,16 @@ class QuiltAiAssistant {
 				</div>
 				<input id="model" class="input" style="max-width: 280px" placeholder="model id (dev/model)" />
 			</div>
-			<div class="pills"><div class="pill">Plan</div><div class="pill">Code</div><div class="pill">Run</div></div>
+			<div class="pills"><div class="pill" data-template="Plan an implementation strategy for this task with numbered steps.">Plan</div><div class="pill" data-template="Generate production-ready code changes for this task.">Code</div><div class="pill" data-template="Suggest shell commands to build, test, and validate this change.">Run</div><div class="pill" data-template="Write comprehensive tests for my current change and explain coverage gaps.">Test</div></div>
 			<div class="toolbar">
 				<button id="explain" class="btn">Explain Selection</button>
 				<button id="doc" class="btn">Generate Doc Comment</button>
 				<button id="audit" class="btn">Audit Workspace</button>
+				<button id="retry" class="btn">Retry Last Prompt</button>
+				<button id="copyLast" class="btn">Copy Last Answer</button>
+				<button id="saveTranscript" class="btn">Save Transcript</button>
+				<button id="clearActivity" class="btn">Clear Activity</button>
+				<button id="switchProvider" class="btn">Toggle Provider</button>
 			</div>
 			<div id="activity" class="activity"></div>
 			<div id="messages" class="message-list"></div>
@@ -654,12 +784,22 @@ class QuiltAiAssistant {
 		const providerMeta = document.getElementById('providerMeta');
 		const sessionList = document.getElementById('sessionList');
 		const messages = document.getElementById('messages');
+		let activeSessionId = undefined;
 
 		document.getElementById('newChat').addEventListener('click', () => qc.postMessage({ type: 'newChat' }));
 		document.getElementById('ask').addEventListener('click', () => qc.postMessage({ type: 'ask', prompt: prompt.value, model: model.value }));
 		document.getElementById('explain').addEventListener('click', () => qc.postMessage({ type: 'explainSelection' }));
 		document.getElementById('doc').addEventListener('click', () => qc.postMessage({ type: 'generateDocComment' }));
 		document.getElementById('audit').addEventListener('click', () => qc.postMessage({ type: 'auditWorkspace' }));
+
+		document.getElementById('duplicateChat').addEventListener('click', () => { if (activeSessionId) { qc.postMessage({ type: 'duplicateChat', sessionId: activeSessionId }); } });
+		document.getElementById('retry').addEventListener('click', () => qc.postMessage({ type: 'retryLastPrompt' }));
+		document.getElementById('copyLast').addEventListener('click', () => qc.postMessage({ type: 'copyLastAnswer' }));
+		document.getElementById('saveTranscript').addEventListener('click', () => qc.postMessage({ type: 'saveTranscript' }));
+		document.getElementById('clearActivity').addEventListener('click', () => qc.postMessage({ type: 'clearActivity' }));
+		document.getElementById('switchProvider').addEventListener('click', () => qc.postMessage({ type: 'switchProvider', provider: providerMeta.textContent.includes('openrouter') ? 'googleGemini' : 'openrouter' }));
+		document.querySelectorAll('[data-template]').forEach(item => item.addEventListener('click', () => qc.postMessage({ type: 'useTemplate', template: item.getAttribute('data-template') })));
+
 
 		window.addEventListener('message', event => {
 			const state = event.data;
@@ -670,14 +810,21 @@ class QuiltAiAssistant {
 				model.value = state.defaultModel;
 			}
 			providerMeta.textContent = 'Provider: ' + (state.provider || '-');
+			activeSessionId = state.activeSessionId;
 
 			sessionList.innerHTML = (state.sessions || []).map(session => {
 				const cls = session.id === state.activeSessionId ? 'chat-item active' : 'chat-item';
 				const safeTitle = String(session.title || 'New Chat').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-				return '<div class="' + cls + '" data-id="' + session.id + '">' + safeTitle + ' (' + session.messageCount + ')<button class="chat-del" data-del="' + session.id + '">×</button></div>';
+				return '<div class="' + cls + '" data-id="' + session.id + '">' + safeTitle + ' (' + session.messageCount + ')<button class="chat-rename" data-rename="' + session.id + '">✎</button><button class="chat-del" data-del="' + session.id + '">×</button></div>';
 			}).join('');
 			sessionList.querySelectorAll('[data-id]').forEach(item => {
 				item.addEventListener('click', eventItem => {
+					if (eventItem.target && eventItem.target.getAttribute('data-rename')) {
+						const title = window.prompt('Rename chat');
+						if (title) { qc.postMessage({ type: 'renameChat', sessionId: eventItem.target.getAttribute('data-rename'), title }); }
+						eventItem.stopPropagation();
+						return;
+					}
 					if (eventItem.target && eventItem.target.getAttribute('data-del')) {
 						qc.postMessage({ type: 'deleteChat', sessionId: eventItem.target.getAttribute('data-del') });
 						eventItem.stopPropagation();
