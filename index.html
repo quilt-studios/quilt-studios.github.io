@@ -11,7 +11,7 @@
 
 *{
 box-sizing:border-box;
-font-family:Arial,sans-serif;
+font-family:Arial,Helvetica,sans-serif;
 }
 
 body{
@@ -22,61 +22,51 @@ color:white;
 
 
 header{
-
-padding:70px 20px;
+padding:60px 20px;
 text-align:center;
 background:linear-gradient(135deg,#7b2cff,#00c8ff);
-
 }
 
 
-h1{
-
-font-size:75px;
-margin:0;
-
+.logo{
+width:230px;
+height:auto;
+margin-bottom:25px;
+filter:drop-shadow(0 0 20px rgba(0,200,255,0.6));
 }
 
 
 header p{
-
 font-size:22px;
-
 }
 
 
-select,input,button{
-
+select,
+input,
+button{
 padding:12px;
 border-radius:8px;
 font-size:16px;
-
 }
 
 
 .container{
-
 width:90%;
 max-width:1200px;
 margin:auto;
-
 }
 
 
 .card{
-
 background:#151c2b;
 padding:35px;
 margin:35px 0;
 border-radius:20px;
-
 }
 
 
 h2{
-
 color:#00c8ff;
-
 }
 
 
@@ -87,6 +77,7 @@ padding:25px;
 border-radius:12px;
 color:#00ff99;
 font-family:monospace;
+line-height:1.6;
 
 }
 
@@ -94,19 +85,20 @@ font-family:monospace;
 footer{
 
 padding:30px;
-background:#05070c;
 text-align:center;
+background:#05070c;
 
 }
 
 
-/* Language Popup */
-
+/* Language popup */
 
 #languagePopup{
 
 position:fixed;
+
 display:none;
+
 align-items:center;
 justify-content:center;
 
@@ -126,6 +118,7 @@ z-index:9999;
 .languageBox{
 
 background:#151c2b;
+
 padding:35px;
 
 border-radius:20px;
@@ -158,9 +151,12 @@ height:220px;
 margin-top:20px;
 
 background:#00c8ff;
-border:0;
+
+border:none;
 
 cursor:pointer;
+
+font-weight:bold;
 
 }
 
@@ -173,21 +169,20 @@ cursor:pointer;
 <body>
 
 
-
-<!-- First Start Language -->
-
 <div id="languagePopup">
 
 <div class="languageBox">
 
-<h2>🌐 Language</h2>
+<h2>🌐 Choose Language</h2>
 
-<input id="searchLanguage"
+
+<input 
+id="languageSearch"
 placeholder="Search language..."
-oninput="searchLanguage()">
+oninput="filterLanguages()">
 
 
-<select id="languageSelect" size="8">
+<select id="firstLanguageSelect" size="8">
 
 <option value="de">🇩🇪 Deutsch</option>
 <option value="tr">🇹🇷 Türkçe</option>
@@ -214,11 +209,17 @@ Start Plix
 
 <header>
 
-<h1>PLIX</h1>
+
+<img 
+src="https://i.postimg.cc/C5nyrVhR/plix.png"
+class="logo"
+alt="Plix Logo">
+
 
 <p id="subtitle">
-A new kernel from scratch
+A completely new kernel with Linux driver support
 </p>
+
 
 
 <select onchange="changeLanguage(this.value)">
@@ -252,11 +253,13 @@ About Plix
 
 <p id="about">
 
-Plix is a completely new kernel developed from zero.
+Plix is a completely new kernel developed from scratch.
 
 </p>
 
+
 </div>
+
 
 
 
@@ -273,15 +276,20 @@ Plix Kernel
 
 │
 ├── Boot System
-├── Scheduler
-├── Memory Manager
-├── Process Manager
+│
+├── Core Kernel
+│   ├── Scheduler
+│   ├── Memory Manager
+│   ├── Process Manager
+│   └── System Calls
+│
+├── Hardware Layer
 │
 ├── Driver Framework
-│   ├── GPU
-│   ├── Network
-│   ├── USB
-│   └── Storage
+│   ├── GPU Drivers
+│   ├── Network Drivers
+│   ├── USB Drivers
+│   └── Storage Drivers
 │
 └── User Space
 
@@ -294,6 +302,7 @@ Plix Kernel
 
 <div class="card">
 
+
 <h2 id="driverTitle">
 Linux Driver Support
 </h2>
@@ -305,7 +314,7 @@ Linux Driver Support
 <li>Network Drivers</li>
 <li>USB Devices</li>
 <li>Storage</li>
-<li>Audio</li>
+<li>Audio Hardware</li>
 
 </ul>
 
@@ -317,9 +326,14 @@ Linux Driver Support
 
 
 
+
 <footer>
 
 Plix Kernel Project © 2026
+
+<br>
+
+Built from zero. Open. Fast. Secure.
 
 </footer>
 
@@ -338,17 +352,29 @@ aboutTitle:"Über Plix",
 about:"Plix ist ein komplett neu programmierter Kernel, entwickelt von Grund auf.",
 architectureTitle:"Kernel Architektur",
 driverTitle:"Linux Driver Support",
-drivers:["GPU Unterstützung","Netzwerk-Treiber","USB Geräte","Speicher","Audio"]
+drivers:[
+"GPU Unterstützung",
+"Netzwerk-Treiber",
+"USB Geräte",
+"Speicher",
+"Audio Hardware"
+]
 },
 
 
 tr:{
 subtitle:"Linux sürücü desteğine sahip sıfırdan geliştirilen çekirdek",
 aboutTitle:"Plix Hakkında",
-about:"Plix tamamen sıfırdan geliştirilen bir çekirdek projesidir.",
+about:"Plix tamamen sıfırdan geliştirilen modern bir çekirdek projesidir.",
 architectureTitle:"Çekirdek Mimarisi",
 driverTitle:"Linux Sürücü Desteği",
-drivers:["GPU","Ağ sürücüleri","USB","Depolama","Ses"]
+drivers:[
+"GPU Desteği",
+"Ağ sürücüleri",
+"USB",
+"Depolama",
+"Ses"
+]
 },
 
 
@@ -358,37 +384,61 @@ aboutTitle:"About Plix",
 about:"Plix is a kernel developed completely from scratch.",
 architectureTitle:"Kernel Architecture",
 driverTitle:"Linux Driver Support",
-drivers:["GPU","Network","USB","Storage","Audio"]
+drivers:[
+"GPU Support",
+"Network Drivers",
+"USB Devices",
+"Storage",
+"Audio Hardware"
+]
 },
 
 
 fr:{
-subtitle:"Un noyau créé depuis zéro avec pilotes Linux",
+subtitle:"Un noyau entièrement nouveau avec support des pilotes Linux",
 aboutTitle:"À propos de Plix",
 about:"Plix est un noyau développé entièrement depuis zéro.",
-architectureTitle:"Architecture Kernel",
-driverTitle:"Pilotes Linux",
-drivers:["GPU","Réseau","USB","Stockage","Audio"]
+architectureTitle:"Architecture du noyau",
+driverTitle:"Support des pilotes Linux",
+drivers:[
+"GPU",
+"Réseau",
+"USB",
+"Stockage",
+"Audio"
+]
 },
 
 
 es:{
-subtitle:"Kernel creado desde cero con drivers Linux",
+subtitle:"Kernel creado desde cero con soporte de drivers Linux",
 aboutTitle:"Sobre Plix",
 about:"Plix es un kernel completamente nuevo.",
-architectureTitle:"Arquitectura",
+architectureTitle:"Arquitectura del kernel",
 driverTitle:"Drivers Linux",
-drivers:["GPU","Red","USB","Almacenamiento","Audio"]
+drivers:[
+"GPU",
+"Red",
+"USB",
+"Almacenamiento",
+"Audio"
+]
 },
 
 
 it:{
 subtitle:"Kernel sviluppato da zero con driver Linux",
 aboutTitle:"Informazioni su Plix",
-about:"Plix è un kernel nuovo sviluppato da zero.",
-architectureTitle:"Architettura",
+about:"Plix è un kernel completamente nuovo.",
+architectureTitle:"Architettura Kernel",
 driverTitle:"Driver Linux",
-drivers:["GPU","Rete","USB","Storage","Audio"]
+drivers:[
+"GPU",
+"Rete",
+"USB",
+"Archiviazione",
+"Audio"
+]
 },
 
 
@@ -396,19 +446,31 @@ ru:{
 subtitle:"Новое ядро с поддержкой Linux драйверов",
 aboutTitle:"О Plix",
 about:"Plix — новое ядро созданное с нуля.",
-architectureTitle:"Архитектура",
-driverTitle:"Linux драйверы",
-drivers:["GPU","Сеть","USB","Хранилище","Аудио"]
+architectureTitle:"Архитектура ядра",
+driverTitle:"Поддержка Linux драйверов",
+drivers:[
+"GPU",
+"Сеть",
+"USB",
+"Хранилище",
+"Аудио"
+]
 },
 
 
 zh:{
-subtitle:"从零开发并支持 Linux 驱动的新内核",
+subtitle:"从零开发并支持 Linux 驱动的新型内核",
 aboutTitle:"关于 Plix",
-about:"Plix 是完全重新开发的内核。",
+about:"Plix 是完全重新开发的内核项目。",
 architectureTitle:"内核架构",
 driverTitle:"Linux 驱动支持",
-drivers:["GPU","网络","USB","存储","音频"]
+drivers:[
+"GPU",
+"网络",
+"USB",
+"存储",
+"音频"
+]
 }
 
 };
@@ -419,24 +481,31 @@ function applyLanguage(lang){
 
 let l=languages[lang];
 
-subtitle.innerHTML=l.subtitle;
 
-aboutTitle.innerHTML=l.aboutTitle;
+document.getElementById("subtitle").innerHTML=l.subtitle;
 
-about.innerHTML=l.about;
+document.getElementById("aboutTitle").innerHTML=l.aboutTitle;
 
-architectureTitle.innerHTML=l.architectureTitle;
+document.getElementById("about").innerHTML=l.about;
 
-driverTitle.innerHTML=l.driverTitle;
+document.getElementById("architectureTitle").innerHTML=l.architectureTitle;
+
+document.getElementById("driverTitle").innerHTML=l.driverTitle;
 
 
-drivers.innerHTML="";
+let list=document.getElementById("drivers");
 
-l.drivers.forEach(x=>{
+list.innerHTML="";
 
-drivers.innerHTML+="<li>"+x+"</li>";
+
+l.drivers.forEach(item=>{
+
+list.innerHTML+="<li>"+item+"</li>";
 
 });
+
+
+document.querySelectorAll("select")[1].value=lang;
 
 }
 
@@ -458,7 +527,9 @@ applyLanguage(lang);
 function saveLanguage(){
 
 let lang=
-languageSelect.value;
+document.getElementById(
+"firstLanguageSelect"
+).value;
 
 
 localStorage.setItem(
@@ -467,7 +538,10 @@ lang
 );
 
 
-languagePopup.style.display="none";
+document.getElementById(
+"languagePopup"
+).style.display="none";
+
 
 applyLanguage(lang);
 
@@ -475,24 +549,29 @@ applyLanguage(lang);
 
 
 
-function searchLanguage(){
+function filterLanguages(){
 
 let text=
-searchLanguage.value.toLowerCase();
+document.getElementById(
+"languageSearch"
+).value.toLowerCase();
 
 
 document.querySelectorAll(
-"#languageSelect option"
+"#firstLanguageSelect option"
 )
-.forEach(o=>{
+.forEach(option=>{
 
-o.style.display=
-o.textContent.toLowerCase()
+
+option.style.display=
+option.textContent
+.toLowerCase()
 .includes(text)
 ?
 "block"
 :
 "none";
+
 
 });
 
@@ -500,7 +579,9 @@ o.textContent.toLowerCase()
 
 
 
+
 window.onload=function(){
+
 
 let saved=
 localStorage.getItem(
@@ -513,12 +594,14 @@ if(saved){
 applyLanguage(saved);
 
 }
-
 else{
 
-languagePopup.style.display="flex";
+document.getElementById(
+"languagePopup"
+).style.display="flex";
 
 }
+
 
 };
 
