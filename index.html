@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Plix Kernel</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+margin:0;
+background:#080c14;
+color:white;
+}
+
+
+header{
+
+padding:70px 20px;
+text-align:center;
+background:linear-gradient(135deg,#7b2cff,#00c8ff);
+
+}
+
+
+h1{
+
+font-size:75px;
+margin:0;
+
+}
+
+
+header p{
+
+font-size:22px;
+
+}
+
+
+select,input,button{
+
+padding:12px;
+border-radius:8px;
+font-size:16px;
+
+}
+
+
+.container{
+
+width:90%;
+max-width:1200px;
+margin:auto;
+
+}
+
+
+.card{
+
+background:#151c2b;
+padding:35px;
+margin:35px 0;
+border-radius:20px;
+
+}
+
+
+h2{
+
+color:#00c8ff;
+
+}
+
+
+.code{
+
+background:#000;
+padding:25px;
+border-radius:12px;
+color:#00ff99;
+font-family:monospace;
+
+}
+
+
+footer{
+
+padding:30px;
+background:#05070c;
+text-align:center;
+
+}
+
+
+/* Language Popup */
+
+
+#languagePopup{
+
+position:fixed;
+display:none;
+align-items:center;
+justify-content:center;
+
+top:0;
+left:0;
+
+width:100%;
+height:100%;
+
+background:rgba(0,0,0,.85);
+
+z-index:9999;
+
+}
+
+
+.languageBox{
+
+background:#151c2b;
+padding:35px;
+
+border-radius:20px;
+
+width:360px;
+
+text-align:center;
+
+}
+
+
+.languageBox input{
+
+width:100%;
+margin:15px 0;
+
+}
+
+
+.languageBox select{
+
+width:100%;
+height:220px;
+
+}
+
+
+.languageBox button{
+
+margin-top:20px;
+
+background:#00c8ff;
+border:0;
+
+cursor:pointer;
+
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+
+<!-- First Start Language -->
+
+<div id="languagePopup">
+
+<div class="languageBox">
+
+<h2>🌐 Language</h2>
+
+<input id="searchLanguage"
+placeholder="Search language..."
+oninput="searchLanguage()">
+
+
+<select id="languageSelect" size="8">
+
+<option value="de">🇩🇪 Deutsch</option>
+<option value="tr">🇹🇷 Türkçe</option>
+<option value="en">🇬🇧 English</option>
+<option value="fr">🇫🇷 Français</option>
+<option value="es">🇪🇸 Español</option>
+<option value="it">🇮🇹 Italiano</option>
+<option value="ru">🇷🇺 Русский</option>
+<option value="zh">🇨🇳 中文</option>
+
+</select>
+
+
+<button onclick="saveLanguage()">
+Start Plix
+</button>
+
+
+</div>
+
+</div>
+
+
+
+<header>
+
+<h1>PLIX</h1>
+
+<p id="subtitle">
+A new kernel from scratch
+</p>
+
+
+<select onchange="changeLanguage(this.value)">
+
+<option value="de">🇩🇪 Deutsch</option>
+<option value="tr">🇹🇷 Türkçe</option>
+<option value="en">🇬🇧 English</option>
+<option value="fr">🇫🇷 Français</option>
+<option value="es">🇪🇸 Español</option>
+<option value="it">🇮🇹 Italiano</option>
+<option value="ru">🇷🇺 Русский</option>
+<option value="zh">🇨🇳 中文</option>
+
+</select>
+
+
+</header>
+
+
+
+
+<div class="container">
+
+
+<div class="card">
+
+<h2 id="aboutTitle">
+About Plix
+</h2>
+
+
+<p id="about">
+
+Plix is a completely new kernel developed from zero.
+
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2 id="architectureTitle">
+Kernel Architecture
+</h2>
+
+
+<div class="code">
+
+Plix Kernel
+
+│
+├── Boot System
+├── Scheduler
+├── Memory Manager
+├── Process Manager
+│
+├── Driver Framework
+│   ├── GPU
+│   ├── Network
+│   ├── USB
+│   └── Storage
+│
+└── User Space
+
+</div>
+
+</div>
+
+
+
+
+<div class="card">
+
+<h2 id="driverTitle">
+Linux Driver Support
+</h2>
+
+
+<ul id="drivers">
+
+<li>GPU Support</li>
+<li>Network Drivers</li>
+<li>USB Devices</li>
+<li>Storage</li>
+<li>Audio</li>
+
+</ul>
+
+
+</div>
+
+
+</div>
+
+
+
+<footer>
+
+Plix Kernel Project © 2026
+
+</footer>
+
+
+
+
+<script>
+
+
+const languages={
+
+
+de:{
+subtitle:"Ein komplett neu entwickelter Kernel mit Linux-Treiber-Unterstützung",
+aboutTitle:"Über Plix",
+about:"Plix ist ein komplett neu programmierter Kernel, entwickelt von Grund auf.",
+architectureTitle:"Kernel Architektur",
+driverTitle:"Linux Driver Support",
+drivers:["GPU Unterstützung","Netzwerk-Treiber","USB Geräte","Speicher","Audio"]
+},
+
+
+tr:{
+subtitle:"Linux sürücü desteğine sahip sıfırdan geliştirilen çekirdek",
+aboutTitle:"Plix Hakkında",
+about:"Plix tamamen sıfırdan geliştirilen bir çekirdek projesidir.",
+architectureTitle:"Çekirdek Mimarisi",
+driverTitle:"Linux Sürücü Desteği",
+drivers:["GPU","Ağ sürücüleri","USB","Depolama","Ses"]
+},
+
+
+en:{
+subtitle:"A completely new kernel with Linux driver support",
+aboutTitle:"About Plix",
+about:"Plix is a kernel developed completely from scratch.",
+architectureTitle:"Kernel Architecture",
+driverTitle:"Linux Driver Support",
+drivers:["GPU","Network","USB","Storage","Audio"]
+},
+
+
+fr:{
+subtitle:"Un noyau créé depuis zéro avec pilotes Linux",
+aboutTitle:"À propos de Plix",
+about:"Plix est un noyau développé entièrement depuis zéro.",
+architectureTitle:"Architecture Kernel",
+driverTitle:"Pilotes Linux",
+drivers:["GPU","Réseau","USB","Stockage","Audio"]
+},
+
+
+es:{
+subtitle:"Kernel creado desde cero con drivers Linux",
+aboutTitle:"Sobre Plix",
+about:"Plix es un kernel completamente nuevo.",
+architectureTitle:"Arquitectura",
+driverTitle:"Drivers Linux",
+drivers:["GPU","Red","USB","Almacenamiento","Audio"]
+},
+
+
+it:{
+subtitle:"Kernel sviluppato da zero con driver Linux",
+aboutTitle:"Informazioni su Plix",
+about:"Plix è un kernel nuovo sviluppato da zero.",
+architectureTitle:"Architettura",
+driverTitle:"Driver Linux",
+drivers:["GPU","Rete","USB","Storage","Audio"]
+},
+
+
+ru:{
+subtitle:"Новое ядро с поддержкой Linux драйверов",
+aboutTitle:"О Plix",
+about:"Plix — новое ядро созданное с нуля.",
+architectureTitle:"Архитектура",
+driverTitle:"Linux драйверы",
+drivers:["GPU","Сеть","USB","Хранилище","Аудио"]
+},
+
+
+zh:{
+subtitle:"从零开发并支持 Linux 驱动的新内核",
+aboutTitle:"关于 Plix",
+about:"Plix 是完全重新开发的内核。",
+architectureTitle:"内核架构",
+driverTitle:"Linux 驱动支持",
+drivers:["GPU","网络","USB","存储","音频"]
+}
+
+};
+
+
+
+function applyLanguage(lang){
+
+let l=languages[lang];
+
+subtitle.innerHTML=l.subtitle;
+
+aboutTitle.innerHTML=l.aboutTitle;
+
+about.innerHTML=l.about;
+
+architectureTitle.innerHTML=l.architectureTitle;
+
+driverTitle.innerHTML=l.driverTitle;
+
+
+drivers.innerHTML="";
+
+l.drivers.forEach(x=>{
+
+drivers.innerHTML+="<li>"+x+"</li>";
+
+});
+
+}
+
+
+
+function changeLanguage(lang){
+
+localStorage.setItem(
+"plix-language",
+lang
+);
+
+applyLanguage(lang);
+
+}
+
+
+
+function saveLanguage(){
+
+let lang=
+languageSelect.value;
+
+
+localStorage.setItem(
+"plix-language",
+lang
+);
+
+
+languagePopup.style.display="none";
+
+applyLanguage(lang);
+
+}
+
+
+
+function searchLanguage(){
+
+let text=
+searchLanguage.value.toLowerCase();
+
+
+document.querySelectorAll(
+"#languageSelect option"
+)
+.forEach(o=>{
+
+o.style.display=
+o.textContent.toLowerCase()
+.includes(text)
+?
+"block"
+:
+"none";
+
+});
+
+}
+
+
+
+window.onload=function(){
+
+let saved=
+localStorage.getItem(
+"plix-language"
+);
+
+
+if(saved){
+
+applyLanguage(saved);
+
+}
+
+else{
+
+languagePopup.style.display="flex";
+
+}
+
+};
+
+
+</script>
+
+
+</body>
+</html>
