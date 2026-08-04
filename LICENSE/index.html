@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Plix Free Public License (PFPL)</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, Arial, sans-serif;
+    background: linear-gradient(135deg,#111,#333);
+    color: white;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 40px 20px;
+}
+
+.hero {
+    text-align:center;
+    padding:70px 20px;
+}
+
+.hero h1 {
+    font-size:48px;
+    margin-bottom:10px;
+}
+
+.hero p {
+    font-size:20px;
+    opacity:.85;
+}
+
+.badge {
+    display:inline-block;
+    padding:8px 16px;
+    background:white;
+    color:#111;
+    border-radius:30px;
+    margin-top:20px;
+}
+
+
+.buttons {
+    margin-top:35px;
+}
+
+button {
+    border:none;
+    padding:13px 22px;
+    margin:6px;
+    border-radius:10px;
+    cursor:pointer;
+    font-size:15px;
+    background:white;
+    color:#111;
+    transition:.2s;
+}
+
+button:hover {
+    transform:translateY(-2px);
+}
+
+
+.card {
+    background:white;
+    color:#222;
+    border-radius:20px;
+    padding:30px;
+    margin:25px 0;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+
+
+.languages {
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.languages button {
+    background:#222;
+    color:white;
+}
+
+
+ul {
+    line-height:2;
+}
+
+
+footer {
+    text-align:center;
+    opacity:.7;
+    padding:30px;
+}
+
+
+a {
+    color:inherit;
+}
+
+
+.highlight {
+    font-size:22px;
+    font-weight:bold;
+}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<section class="hero">
+
+<h1>Plix Free Public License</h1>
+
+<p>
+PFPL — Free Software. User Freedom. Device Freedom.
+</p>
+
+<div class="badge">
+Version 1.0 • Copyright © 2026 Robin Ari Hanazay
+</div>
+
+
+<div class="buttons">
+
+<a href="https://github.com/quilt-studios/plix" target="_blank">
+<button>GitHub Repository</button>
+</a>
+
+<a href="https://github.com/quilt-studios/plix/blob/main/LICENSE" target="_blank">
+<button>License Text</button>
+</a>
+
+<a href="https://github.com/quilt-studios/plix/discussions" target="_blank">
+<button>Community</button>
+</a>
+
+</div>
+
+</section>
+
+
+
+<div class="languages">
+
+<button onclick="setLang('en')">English</button>
+<button onclick="setLang('de')">Deutsch</button>
+<button onclick="setLang('it')">Italiano</button>
+<button onclick="setLang('fr')">Français</button>
+<button onclick="setLang('tr')">Türkçe</button>
+<button onclick="setLang('ru')">Русский</button>
+<button onclick="setLang('uk')">Українська</button>
+
+</div>
+
+
+
+<div class="card">
+
+<h2 id="title"></h2>
+
+<p id="intro"></p>
+
+
+<h2 id="rightsTitle"></h2>
+
+<ul id="rights"></ul>
+
+
+<h2 id="deviceTitle"></h2>
+
+<p id="device"></p>
+
+
+<h2 id="communityTitle"></h2>
+
+<p id="community"></p>
+
+
+</div>
+
+
+
+
+<div class="card">
+
+<h2>About PFPL</h2>
+
+<p>
+The Plix Free Public License is an independent software license
+focused on freedom, modification rights and user control over devices.
+</p>
+
+
+<p class="highlight">
+Free software should remain free.
+</p>
+
+</div>
+
+
+
+<div class="card">
+
+<h2>Repository</h2>
+
+<p>
+Official project:
+</p>
+
+<a href="https://github.com/quilt-studios/plix" target="_blank">
+github.com/quilt-studios/plix
+</a>
+
+</div>
+
+
+
+<footer>
+
+Plix Free Public License (PFPL)<br>
+Copyright © 2026 Robin Ari Hanazay
+
+</footer>
+
+
+</div>
+
+
+
+<script>
+
+
+const data = {
+
+
+en:{
+title:"What is PFPL?",
+intro:"The Plix Free Public License is a free software license allowing use, study, modification, distribution and commercial use of software.",
+rightsTitle:"User Rights",
+rights:[
+"Use software",
+"Study source code",
+"Modify software",
+"Distribute modified versions",
+"Commercial use"
+],
+deviceTitle:"Device Freedom",
+device:"PFPL protects users from intentional restrictions that prevent modified software from running on supported devices.",
+communityTitle:"Community",
+community:"Developers can use, discuss and improve PFPL through the project repository."
+},
+
+
+de:{
+title:"Was ist PFPL?",
+intro:"Die Plix Free Public License ist eine freie Softwarelizenz für Nutzung, Untersuchung, Änderung, Verbreitung und kommerzielle Nutzung.",
+rightsTitle:"Nutzerrechte",
+rights:[
+"Software verwenden",
+"Quellcode untersuchen",
+"Software verändern",
+"Versionen veröffentlichen",
+"Kommerzielle Nutzung"
+],
+deviceTitle:"Gerätefreiheit",
+device:"PFPL schützt Nutzer davor, dass unterstützte Geräte absichtlich für veränderte Software gesperrt werden.",
+communityTitle:"Community",
+community:"Entwickler können PFPL nutzen, diskutieren und verbessern."
+},
+
+
+it:{
+title:"Cos'è PFPL?",
+intro:"PFPL è una licenza software libera che permette utilizzo, studio, modifica, distribuzione e uso commerciale.",
+rightsTitle:"Diritti",
+rights:[
+"Usare software",
+"Studiare codice",
+"Modificare software",
+"Distribuire versioni",
+"Uso commerciale"
+],
+deviceTitle:"Libertà dei dispositivi",
+device:"PFPL protegge gli utenti dai blocchi intenzionali sui dispositivi.",
+communityTitle:"Comunità",
+community:"Gli sviluppatori possono usare e migliorare PFPL."
+},
+
+
+fr:{
+title:"Qu'est-ce que PFPL ?",
+intro:"PFPL est une licence libre permettant l'utilisation, l'étude, la modification, la distribution et l'usage commercial.",
+rightsTitle:"Droits",
+rights:[
+"Utiliser le logiciel",
+"Étudier le code",
+"Modifier",
+"Distribuer",
+"Usage commercial"
+],
+deviceTitle:"Liberté des appareils",
+device:"PFPL protège les utilisateurs contre les restrictions intentionnelles.",
+communityTitle:"Communauté",
+community:"Les développeurs peuvent améliorer PFPL."
+},
+
+
+tr:{
+title:"PFPL nedir?",
+intro:"PFPL özgür yazılım kullanımı, inceleme, değiştirme ve dağıtıma izin verir.",
+rightsTitle:"Haklar",
+rights:[
+"Kullanım",
+"Kod inceleme",
+"Değiştirme",
+"Dağıtım",
+"Ticari kullanım"
+],
+deviceTitle:"Cihaz özgürlüğü",
+device:"PFPL kullanıcıları cihaz kısıtlamalarına karşı korur.",
+communityTitle:"Topluluk",
+community:"Geliştiriciler PFPL'yi geliştirebilir."
+},
+
+
+ru:{
+title:"Что такое PFPL?",
+intro:"PFPL — свободная лицензия для использования, изучения, изменения и распространения программ.",
+rightsTitle:"Права",
+rights:[
+"Использование",
+"Изучение кода",
+"Изменение",
+"Распространение",
+"Коммерческое использование"
+],
+deviceTitle:"Свобода устройств",
+device:"PFPL защищает пользователей от намеренных ограничений.",
+communityTitle:"Сообщество",
+community:"Разработчики могут улучшать PFPL."
+},
+
+
+uk:{
+title:"Що таке PFPL?",
+intro:"PFPL — вільна ліцензія для використання, вивчення, зміни та поширення програм.",
+rightsTitle:"Права",
+rights:[
+"Використання",
+"Вивчення коду",
+"Зміна",
+"Поширення",
+"Комерційне використання"
+],
+deviceTitle:"Свобода пристроїв",
+device:"PFPL захищає користувачів від навмисних обмежень.",
+communityTitle:"Спільнота",
+community:"Розробники можуть покращувати PFPL."
+}
+
+
+};
+
+
+
+function setLang(lang){
+
+let t=data[lang];
+
+document.getElementById("title").innerHTML=t.title;
+document.getElementById("intro").innerHTML=t.intro;
+
+document.getElementById("rightsTitle").innerHTML=t.rightsTitle;
+
+let list=document.getElementById("rights");
+list.innerHTML="";
+
+t.rights.forEach(r=>{
+let li=document.createElement("li");
+li.innerHTML=r;
+list.appendChild(li);
+});
+
+
+document.getElementById("deviceTitle").innerHTML=t.deviceTitle;
+document.getElementById("device").innerHTML=t.device;
+
+document.getElementById("communityTitle").innerHTML=t.communityTitle;
+document.getElementById("community").innerHTML=t.community;
+
+}
+
+
+setLang("en");
+
+
+</script>
+
+
+</body>
+</html>
