@@ -22,51 +22,94 @@ color:white;
 
 
 header{
-padding:60px 20px;
+
+padding:70px 20px;
 text-align:center;
 background:linear-gradient(135deg,#7b2cff,#00c8ff);
+
 }
 
 
 .logo{
+
 width:230px;
-height:auto;
-margin-bottom:25px;
-filter:drop-shadow(0 0 20px rgba(0,200,255,0.6));
+filter:drop-shadow(0 0 25px #00c8ff);
+
 }
 
 
 header p{
+
 font-size:22px;
+
 }
+
+
+
+nav{
+
+background:#05070c;
+padding:20px;
+
+display:flex;
+justify-content:center;
+gap:25px;
+flex-wrap:wrap;
+
+}
+
+
+nav a{
+
+color:white;
+text-decoration:none;
+font-size:18px;
+
+}
+
+
+nav a:hover{
+
+color:#00c8ff;
+
+}
+
 
 
 select,
 input,
 button{
+
 padding:12px;
 border-radius:8px;
 font-size:16px;
+
 }
 
 
 .container{
+
 width:90%;
 max-width:1200px;
 margin:auto;
+
 }
 
 
 .card{
+
 background:#151c2b;
 padding:35px;
 margin:35px 0;
 border-radius:20px;
+
 }
 
 
 h2{
+
 color:#00c8ff;
+
 }
 
 
@@ -75,23 +118,52 @@ color:#00c8ff;
 background:#000;
 padding:25px;
 border-radius:12px;
+
 color:#00ff99;
+
 font-family:monospace;
-line-height:1.6;
+
+line-height:1.7;
 
 }
+
+
+.btn{
+
+display:inline-block;
+
+padding:14px 25px;
+
+background:#00c8ff;
+
+color:#000;
+
+border-radius:10px;
+
+text-decoration:none;
+
+font-weight:bold;
+
+margin-top:15px;
+
+}
+
 
 
 footer{
 
-padding:30px;
-text-align:center;
 background:#05070c;
+
+padding:30px;
+
+text-align:center;
 
 }
 
 
-/* Language popup */
+
+
+/* FIRST START LANGUAGE */
 
 #languagePopup{
 
@@ -100,10 +172,8 @@ position:fixed;
 display:none;
 
 align-items:center;
-justify-content:center;
 
-top:0;
-left:0;
+justify-content:center;
 
 width:100%;
 height:100%;
@@ -115,32 +185,34 @@ z-index:9999;
 }
 
 
+
 .languageBox{
 
 background:#151c2b;
 
 padding:35px;
 
-border-radius:20px;
-
 width:360px;
+
+border-radius:20px;
 
 text-align:center;
 
 }
 
 
-.languageBox input{
+.languageBox input,
+.languageBox select{
 
 width:100%;
-margin:15px 0;
+
+margin:10px 0;
 
 }
 
 
 .languageBox select{
 
-width:100%;
 height:220px;
 
 }
@@ -148,18 +220,13 @@ height:220px;
 
 .languageBox button{
 
-margin-top:20px;
-
 background:#00c8ff;
 
 border:none;
 
 cursor:pointer;
 
-font-weight:bold;
-
 }
-
 
 </style>
 
@@ -169,17 +236,18 @@ font-weight:bold;
 <body>
 
 
+
 <div id="languagePopup">
 
 <div class="languageBox">
 
-<h2>🌐 Choose Language</h2>
+<h2>🌐 Language</h2>
 
 
-<input 
-id="languageSearch"
+<input id="languageSearch"
 placeholder="Search language..."
 oninput="filterLanguages()">
+
 
 
 <select id="firstLanguageSelect" size="8">
@@ -207,12 +275,13 @@ Start Plix
 
 
 
+
+
 <header>
 
 
-<img 
+<img class="logo"
 src="https://i.postimg.cc/C5nyrVhR/plix.png"
-class="logo"
 alt="Plix Logo">
 
 
@@ -241,10 +310,41 @@ A completely new kernel with Linux driver support
 
 
 
+
+<nav>
+
+<a href="#about">
+About
+</a>
+
+<a href="#architecture">
+Architecture
+</a>
+
+<a href="#drivers">
+Drivers
+</a>
+
+<a href="https://github.com/quilt-studios/plix" target="_blank">
+GitHub
+</a>
+
+<a href="https://github.com/quilt-studios/plix/releases" target="_blank">
+Download
+</a>
+
+
+</nav>
+
+
+
+
+
 <div class="container">
 
 
-<div class="card">
+
+<div class="card" id="about">
 
 <h2 id="aboutTitle">
 About Plix
@@ -258,16 +358,28 @@ Plix is a completely new kernel developed from scratch.
 </p>
 
 
+<a class="btn"
+href="https://github.com/quilt-studios/plix"
+target="_blank">
+
+View Source Code
+
+</a>
+
+
 </div>
 
 
 
 
-<div class="card">
+
+<div class="card" id="architecture">
+
 
 <h2 id="architectureTitle">
 Kernel Architecture
 </h2>
+
 
 
 <div class="code">
@@ -275,32 +387,50 @@ Kernel Architecture
 Plix Kernel
 
 │
+
 ├── Boot System
-│
+
 ├── Core Kernel
+
 │   ├── Scheduler
+
 │   ├── Memory Manager
+
 │   ├── Process Manager
+
 │   └── System Calls
+
 │
+
 ├── Hardware Layer
+
 │
+
 ├── Driver Framework
-│   ├── GPU Drivers
-│   ├── Network Drivers
-│   ├── USB Drivers
-│   └── Storage Drivers
+
+│   ├── GPU
+
+│   ├── Network
+
+│   ├── USB
+
+│   └── Storage
+
 │
+
 └── User Space
 
 </div>
 
+
 </div>
 
 
 
 
-<div class="card">
+
+
+<div class="card" id="drivers">
 
 
 <h2 id="driverTitle">
@@ -308,13 +438,13 @@ Linux Driver Support
 </h2>
 
 
-<ul id="drivers">
+<ul id="driversList">
 
 <li>GPU Support</li>
 <li>Network Drivers</li>
 <li>USB Devices</li>
 <li>Storage</li>
-<li>Audio Hardware</li>
+<li>Audio</li>
 
 </ul>
 
@@ -322,7 +452,40 @@ Linux Driver Support
 </div>
 
 
+
+
+
+
+<div class="card">
+
+
+<h2>
+GitHub Project
+</h2>
+
+
+<p>
+
+The complete Plix source code, development and releases are available on GitHub.
+
+</p>
+
+
+<a class="btn"
+href="https://github.com/quilt-studios/plix"
+target="_blank">
+
+Open GitHub Repository
+
+</a>
+
+
 </div>
+
+
+
+</div>
+
 
 
 
@@ -340,11 +503,11 @@ Built from zero. Open. Fast. Secure.
 
 
 
+
 <script>
 
 
 const languages={
-
 
 de:{
 subtitle:"Ein komplett neu entwickelter Kernel mit Linux-Treiber-Unterstützung",
@@ -352,29 +515,17 @@ aboutTitle:"Über Plix",
 about:"Plix ist ein komplett neu programmierter Kernel, entwickelt von Grund auf.",
 architectureTitle:"Kernel Architektur",
 driverTitle:"Linux Driver Support",
-drivers:[
-"GPU Unterstützung",
-"Netzwerk-Treiber",
-"USB Geräte",
-"Speicher",
-"Audio Hardware"
-]
+drivers:["GPU Unterstützung","Netzwerk-Treiber","USB Geräte","Speicher","Audio Hardware"]
 },
 
 
 tr:{
 subtitle:"Linux sürücü desteğine sahip sıfırdan geliştirilen çekirdek",
 aboutTitle:"Plix Hakkında",
-about:"Plix tamamen sıfırdan geliştirilen modern bir çekirdek projesidir.",
+about:"Plix tamamen sıfırdan geliştirilen çekirdek projesidir.",
 architectureTitle:"Çekirdek Mimarisi",
 driverTitle:"Linux Sürücü Desteği",
-drivers:[
-"GPU Desteği",
-"Ağ sürücüleri",
-"USB",
-"Depolama",
-"Ses"
-]
+drivers:["GPU","Ağ","USB","Depolama","Ses"]
 },
 
 
@@ -384,61 +535,37 @@ aboutTitle:"About Plix",
 about:"Plix is a kernel developed completely from scratch.",
 architectureTitle:"Kernel Architecture",
 driverTitle:"Linux Driver Support",
-drivers:[
-"GPU Support",
-"Network Drivers",
-"USB Devices",
-"Storage",
-"Audio Hardware"
-]
+drivers:["GPU","Network","USB","Storage","Audio"]
 },
 
 
 fr:{
-subtitle:"Un noyau entièrement nouveau avec support des pilotes Linux",
+subtitle:"Un noyau créé depuis zéro avec pilotes Linux",
 aboutTitle:"À propos de Plix",
-about:"Plix est un noyau développé entièrement depuis zéro.",
-architectureTitle:"Architecture du noyau",
-driverTitle:"Support des pilotes Linux",
-drivers:[
-"GPU",
-"Réseau",
-"USB",
-"Stockage",
-"Audio"
-]
+about:"Plix est un noyau développé depuis zéro.",
+architectureTitle:"Architecture Kernel",
+driverTitle:"Pilotes Linux",
+drivers:["GPU","Réseau","USB","Stockage","Audio"]
 },
 
 
 es:{
-subtitle:"Kernel creado desde cero con soporte de drivers Linux",
+subtitle:"Kernel creado desde cero con drivers Linux",
 aboutTitle:"Sobre Plix",
-about:"Plix es un kernel completamente nuevo.",
-architectureTitle:"Arquitectura del kernel",
+about:"Plix es un kernel nuevo.",
+architectureTitle:"Arquitectura",
 driverTitle:"Drivers Linux",
-drivers:[
-"GPU",
-"Red",
-"USB",
-"Almacenamiento",
-"Audio"
-]
+drivers:["GPU","Red","USB","Almacenamiento","Audio"]
 },
 
 
 it:{
 subtitle:"Kernel sviluppato da zero con driver Linux",
 aboutTitle:"Informazioni su Plix",
-about:"Plix è un kernel completamente nuovo.",
-architectureTitle:"Architettura Kernel",
+about:"Plix è un kernel nuovo.",
+architectureTitle:"Architettura",
 driverTitle:"Driver Linux",
-drivers:[
-"GPU",
-"Rete",
-"USB",
-"Archiviazione",
-"Audio"
-]
+drivers:["GPU","Rete","USB","Storage","Audio"]
 },
 
 
@@ -446,15 +573,9 @@ ru:{
 subtitle:"Новое ядро с поддержкой Linux драйверов",
 aboutTitle:"О Plix",
 about:"Plix — новое ядро созданное с нуля.",
-architectureTitle:"Архитектура ядра",
-driverTitle:"Поддержка Linux драйверов",
-drivers:[
-"GPU",
-"Сеть",
-"USB",
-"Хранилище",
-"Аудио"
-]
+architectureTitle:"Архитектура",
+driverTitle:"Linux драйверы",
+drivers:["GPU","Сеть","USB","Хранилище","Аудио"]
 },
 
 
@@ -464,16 +585,12 @@ aboutTitle:"关于 Plix",
 about:"Plix 是完全重新开发的内核项目。",
 architectureTitle:"内核架构",
 driverTitle:"Linux 驱动支持",
-drivers:[
-"GPU",
-"网络",
-"USB",
-"存储",
-"音频"
-]
+drivers:["GPU","网络","USB","存储","音频"]
 }
 
 };
+
+
 
 
 
@@ -493,54 +610,45 @@ document.getElementById("architectureTitle").innerHTML=l.architectureTitle;
 document.getElementById("driverTitle").innerHTML=l.driverTitle;
 
 
-let list=document.getElementById("drivers");
+let list=document.getElementById("driversList");
 
 list.innerHTML="";
 
 
-l.drivers.forEach(item=>{
+l.drivers.forEach(x=>{
 
-list.innerHTML+="<li>"+item+"</li>";
+list.innerHTML+="<li>"+x+"</li>";
 
 });
 
-
-document.querySelectorAll("select")[1].value=lang;
-
 }
+
+
 
 
 
 function changeLanguage(lang){
 
-localStorage.setItem(
-"plix-language",
-lang
-);
+localStorage.setItem("plix-language",lang);
 
 applyLanguage(lang);
 
 }
+
+
 
 
 
 function saveLanguage(){
 
 let lang=
-document.getElementById(
-"firstLanguageSelect"
-).value;
+document.getElementById("firstLanguageSelect").value;
 
 
-localStorage.setItem(
-"plix-language",
-lang
-);
+localStorage.setItem("plix-language",lang);
 
 
-document.getElementById(
-"languagePopup"
-).style.display="none";
+document.getElementById("languagePopup").style.display="none";
 
 
 applyLanguage(lang);
@@ -549,29 +657,23 @@ applyLanguage(lang);
 
 
 
+
+
 function filterLanguages(){
 
-let text=
-document.getElementById(
-"languageSearch"
-).value.toLowerCase();
+let search=
+document.getElementById("languageSearch").value.toLowerCase();
 
 
-document.querySelectorAll(
-"#firstLanguageSelect option"
-)
+document.querySelectorAll("#firstLanguageSelect option")
 .forEach(option=>{
 
-
 option.style.display=
-option.textContent
-.toLowerCase()
-.includes(text)
+option.textContent.toLowerCase().includes(search)
 ?
 "block"
 :
 "none";
-
 
 });
 
@@ -580,13 +682,11 @@ option.textContent
 
 
 
+
 window.onload=function(){
 
-
 let saved=
-localStorage.getItem(
-"plix-language"
-);
+localStorage.getItem("plix-language");
 
 
 if(saved){
@@ -594,14 +694,12 @@ if(saved){
 applyLanguage(saved);
 
 }
+
 else{
 
-document.getElementById(
-"languagePopup"
-).style.display="flex";
+document.getElementById("languagePopup").style.display="flex";
 
 }
-
 
 };
 
