@@ -43,8 +43,10 @@ jobs:
             curl -fL --retry 3 "$BASE/$repo/$ARCH/APKINDEX.tar.gz" -o "$dir/APKINDEX.tar.gz"
             tar -xOzf "$dir/APKINDEX.tar.gz" APKINDEX > "/tmp/$repo.index"
           done
-          # Small installable userspace set. Keeping binaries same-origin makes
-          # apk add work in Safari without a third-party CORS proxy.
+          # Small installable userspace set. APK v2 packages contain multiple
+          # concatenated gzip members, which Safari's DecompressionStream does
+          # not reliably handle. Normalize them server-side into one gzip
+          # stream containing the concatenated tar payloads.
           WANT="musl busybox busybox-binsh alpine-baselayout alpine-baselayout-data alpine-keys ssl_client ca-certificates ca-certificates-bundle libcrypto3 libssl3 zlib scanelf musl-utils"
           for pkg in $WANT; do
             found=0
@@ -52,10 +54,13 @@ jobs:
               idx="/tmp/$repo.index"
               ver=$(awk -v p="$pkg" 'BEGIN{RS="";FS="\n"} $0 ~ "(^|\\n)P:"p"(\\n|$)" {for(i=1;i<=NF;i++)if($i~/^V:/){sub(/^V:/,"",$i);print $i;exit}}' "$idx")
               if [ -n "$ver" ]; then
-                file="$pkg-$ver.apk"
-                echo "mirror $repo/$file"
-                curl -fL --retry 3 "$BASE/$repo/$ARCH/$file" -o "alpine/$repo/$ARCH/$file"
-                printf '%s\t%s\t%s\t%s\n' "$pkg" "$ver" "$repo" "$file" >> alpine/packages.tsv
+                apkfile="$pkg-$ver.apk"
+                browserfile="$pkg-$ver.browser.tar.gz"
+                echo "mirror $repo/$apkfile -> $browserfile"
+                curl -fL --retry 3 "$BASE/$repo/$ARCH/$apkfile" -o "/tmp/$apkfile"
+                gzip -dc "/tmp/$apkfile" | gzip -9 > "alpine/$repo/$ARCH/$browserfile"
+                printf '%s\t%s\t%s\t%s\n' "$pkg" "$ver" "$repo" "$browserfile" >> alpine/packages.tsv
+                rm -f "/tmp/$apkfile"
                 found=1
                 break
               fi
