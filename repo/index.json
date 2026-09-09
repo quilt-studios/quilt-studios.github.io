@@ -1,0 +1,37 @@
+{
+  "name": "POSIX.js Official Repository",
+  "format": 1,
+  "generated": "2026-09-09",
+  "packages": {
+    "neofetch": {
+      "version": "1.0.0",
+      "description": "System information script for POSIX.js",
+      "manifest": "packages/neofetch.json",
+      "depends": []
+    },
+    "cowsay": {
+      "version": "1.0.0",
+      "description": "ASCII cow message utility",
+      "manifest": "packages/cowsay.json",
+      "depends": []
+    },
+    "hello": {
+      "version": "1.0.0",
+      "description": "GNU-style hello test package",
+      "manifest": "packages/hello.json",
+      "depends": []
+    },
+    "sysutils": {
+      "version": "1.1.0",
+      "description": "Extra POSIX.js system utility scripts",
+      "manifest": "packages/sysutils.json",
+      "depends": ["neofetch"]
+    },
+    "motd": {
+      "version": "1.0.0",
+      "description": "Installs a message of the day",
+      "manifest": "packages/motd.json",
+      "depends": []
+    }
+  }
+}
