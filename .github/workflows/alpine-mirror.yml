@@ -3,12 +3,10 @@ name: Update Alpine mirror
 on:
   workflow_dispatch:
   schedule:
-    # Normal five-hour cadence (UTC)
     - cron: '17 */5 * * *'
-    # Daily 16:00 Europe/Vienna while CEST (UTC+2)
-    - cron: '0 14 * * *'
-    # Daily 16:00 Europe/Vienna while CET (UTC+1)
-    - cron: '0 15 * * *'
+    # 15:30 Europe/Vienna: 13:30 UTC in CEST, 14:30 UTC in CET.
+    - cron: '30 13 * * *'
+    - cron: '30 14 * * *'
 
 permissions:
   contents: write
@@ -22,16 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check Vienna 16:00 schedule
+      - name: Check Vienna 15:30 schedule
         id: gate
         shell: bash
         run: |
           set -euo pipefail
-          # Five-hour cron always runs. For the two DST helper crons, only
-          # continue when local Europe/Vienna time is actually 16:00.
-          if [ "${{ github.event.schedule }}" = "0 14 * * *" ] || [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
-            HOUR=$(TZ=Europe/Vienna date +%H)
-            if [ "$HOUR" != "16" ]; then
+          if [ "${{ github.event.schedule }}" = "30 13 * * *" ] || [ "${{ github.event.schedule }}" = "30 14 * * *" ]; then
+            NOW=$(TZ=Europe/Vienna date +%H:%M)
+            if [ "$NOW" != "15:30" ]; then
               echo "run=false" >> "$GITHUB_OUTPUT"
               exit 0
             fi
