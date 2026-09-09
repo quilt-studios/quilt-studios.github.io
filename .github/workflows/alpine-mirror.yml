@@ -2,6 +2,9 @@ name: Update Alpine mirror
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'alpine/rebuild.trigger'
   schedule:
     - cron: '17 */5 * * *'
     - cron: '30 13 * * *'
@@ -43,10 +46,7 @@ jobs:
             curl -fL --retry 3 "$BASE/$repo/$ARCH/APKINDEX.tar.gz" -o "$dir/APKINDEX.tar.gz"
             tar -xOzf "$dir/APKINDEX.tar.gz" APKINDEX > "/tmp/$repo.index"
           done
-          # Small installable userspace set. APK v2 packages contain multiple
-          # concatenated gzip members, which Safari's DecompressionStream does
-          # not reliably handle. Normalize them server-side into one gzip
-          # stream containing the concatenated tar payloads.
+
           WANT="musl busybox busybox-binsh alpine-baselayout alpine-baselayout-data alpine-keys ssl_client ca-certificates ca-certificates-bundle libcrypto3 libssl3 zlib scanelf musl-utils"
           for pkg in $WANT; do
             found=0
@@ -58,7 +58,54 @@ jobs:
                 browserfile="$pkg-$ver.browser.tar.gz"
                 echo "mirror $repo/$apkfile -> $browserfile"
                 curl -fL --retry 3 "$BASE/$repo/$ARCH/$apkfile" -o "/tmp/$apkfile"
-                gzip -dc "/tmp/$apkfile" | gzip -9 > "alpine/$repo/$ARCH/$browserfile"
+                python3 - "/tmp/$apkfile" "alpine/$repo/$ARCH/$browserfile" <<'PY'
+import gzip, io, os, sys, tarfile
+src, dst = sys.argv[1], sys.argv[2]
+raw = open(src, 'rb').read()
+entries = []
+# Python gzip transparently consumes concatenated APK gzip members. The result
+# contains consecutive tar archives (signature/control/data). Walk every tar
+# segment and rebuild one clean tar.gz that browsers can unpack in one pass.
+payload = gzip.decompress(raw)
+off = 0
+while off + 512 <= len(payload):
+    while off + 512 <= len(payload) and payload[off:off+512] == b'\0' * 512:
+        off += 512
+    if off + 512 > len(payload): break
+    try:
+        tf = tarfile.open(fileobj=io.BytesIO(payload[off:]), mode='r:')
+        members = tf.getmembers()
+        if not members: break
+        for m in members:
+            if m.name.startswith('.SIGN.') or m.name == '.PKGINFO':
+                continue
+            data = None
+            if m.isfile():
+                f = tf.extractfile(m)
+                data = f.read() if f else b''
+            entries.append((m, data))
+        # Find archive end manually from member offsets, rounded to 512 plus
+        # the two tar EOF blocks. This allows continuing to the next APK member.
+        end = 0
+        for m in members:
+            size = (m.size + 511) // 512 * 512
+            end = max(end, m.offset_data + size)
+        off += end + 1024
+    except tarfile.TarError:
+        break
+os.makedirs(os.path.dirname(dst), exist_ok=True)
+with tarfile.open(dst, 'w:gz', format=tarfile.PAX_FORMAT) as out:
+    for m, data in entries:
+        m.name = m.name.lstrip('./')
+        if not m.name:
+            continue
+        if m.isfile():
+            out.addfile(m, io.BytesIO(data or b''))
+        else:
+            out.addfile(m)
+print(f'normalized {len(entries)} entries -> {dst}')
+PY
+                test -s "alpine/$repo/$ARCH/$browserfile"
                 printf '%s\t%s\t%s\t%s\n' "$pkg" "$ver" "$repo" "$browserfile" >> alpine/packages.tsv
                 rm -f "/tmp/$apkfile"
                 found=1
