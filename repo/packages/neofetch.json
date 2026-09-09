@@ -1,0 +1,12 @@
+{
+  "name": "neofetch",
+  "version": "1.0.0",
+  "description": "System information script for POSIX.js",
+  "files": [
+    {
+      "path": "/usr/bin/neofetch",
+      "mode": "0755",
+      "content": "#!/bin/sh\necho POSIX.js\necho --------\nuname -a\necho Shell: $SHELL\necho Home: $HOME\ndf\n"
+    }
+  ]
+}
