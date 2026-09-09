@@ -1,0 +1,45 @@
+name: Update Alpine mirror
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alpine-mirror
+  cancel-in-progress: true
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Alpine riscv64 indexes
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=https://dl-cdn.alpinelinux.org/alpine/latest-stable
+          ARCH=riscv64
+          for repo in main community; do
+            mkdir -p "alpine/$repo/$ARCH"
+            curl --fail --location --retry 3 --retry-delay 2 \
+              "$BASE/$repo/$ARCH/APKINDEX.tar.gz" \
+              -o "alpine/$repo/$ARCH/APKINDEX.tar.gz"
+          done
+          date -u +%FT%TZ > alpine/last-update.txt
+      - name: Commit mirror
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add alpine
+          if git diff --cached --quiet; then
+            echo 'Mirror already current.'
+            exit 0
+          fi
+          git commit -m 'Update Alpine riscv64 mirror'
+          git push
