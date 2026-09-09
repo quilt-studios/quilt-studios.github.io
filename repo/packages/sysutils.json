@@ -1,0 +1,17 @@
+{
+  "name": "sysutils",
+  "version": "1.1.0",
+  "description": "Extra POSIX.js system utility scripts",
+  "files": [
+    {
+      "path": "/usr/bin/sysinfo",
+      "mode": "0755",
+      "content": "#!/bin/sh\necho === POSIX.js system ===\nuname -a\nuptime\ndf\nmount\n"
+    },
+    {
+      "path": "/etc/sysutils.conf",
+      "mode": "0644",
+      "content": "repo=official\nfeature=sysinfo\n"
+    }
+  ]
+}
