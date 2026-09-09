@@ -4,7 +4,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '17 */5 * * *'
-    # 15:30 Europe/Vienna: 13:30 UTC in CEST, 14:30 UTC in CET.
     - cron: '30 13 * * *'
     - cron: '30 14 * * *'
 
@@ -26,23 +25,42 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event.schedule }}" = "30 13 * * *" ] || [ "${{ github.event.schedule }}" = "30 14 * * *" ]; then
-            NOW=$(TZ=Europe/Vienna date +%H:%M)
-            if [ "$NOW" != "15:30" ]; then
-              echo "run=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
+            [ "$(TZ=Europe/Vienna date +%H:%M)" = "15:30" ] || { echo "run=false" >> "$GITHUB_OUTPUT"; exit 0; }
           fi
           echo "run=true" >> "$GITHUB_OUTPUT"
-      - name: Download Alpine riscv64 indexes
+      - name: Build Alpine riscv64 mirror
         if: steps.gate.outputs.run == 'true'
         shell: bash
         run: |
           set -euo pipefail
           BASE=https://dl-cdn.alpinelinux.org/alpine/latest-stable
           ARCH=riscv64
+          rm -rf alpine/main/$ARCH alpine/community/$ARCH
+          mkdir -p alpine/main/$ARCH alpine/community/$ARCH
+          : > alpine/packages.tsv
           for repo in main community; do
-            mkdir -p "alpine/$repo/$ARCH"
-            curl --fail --location --retry 3 --retry-delay 2 "$BASE/$repo/$ARCH/APKINDEX.tar.gz" -o "alpine/$repo/$ARCH/APKINDEX.tar.gz"
+            dir="alpine/$repo/$ARCH"
+            curl -fL --retry 3 "$BASE/$repo/$ARCH/APKINDEX.tar.gz" -o "$dir/APKINDEX.tar.gz"
+            tar -xOzf "$dir/APKINDEX.tar.gz" APKINDEX > "/tmp/$repo.index"
+          done
+          # Small installable userspace set. Keeping binaries same-origin makes
+          # apk add work in Safari without a third-party CORS proxy.
+          WANT="musl busybox busybox-binsh alpine-baselayout alpine-baselayout-data alpine-keys ssl_client ca-certificates ca-certificates-bundle libcrypto3 libssl3 zlib scanelf musl-utils"
+          for pkg in $WANT; do
+            found=0
+            for repo in main community; do
+              idx="/tmp/$repo.index"
+              ver=$(awk -v p="$pkg" 'BEGIN{RS="";FS="\n"} $0 ~ "(^|\\n)P:"p"(\\n|$)" {for(i=1;i<=NF;i++)if($i~/^V:/){sub(/^V:/,"",$i);print $i;exit}}' "$idx")
+              if [ -n "$ver" ]; then
+                file="$pkg-$ver.apk"
+                echo "mirror $repo/$file"
+                curl -fL --retry 3 "$BASE/$repo/$ARCH/$file" -o "alpine/$repo/$ARCH/$file"
+                printf '%s\t%s\t%s\t%s\n' "$pkg" "$ver" "$repo" "$file" >> alpine/packages.tsv
+                found=1
+                break
+              fi
+            done
+            [ "$found" = 1 ] || echo "warning: $pkg not found"
           done
           date -u +%FT%TZ > alpine/last-update.txt
       - name: Commit mirror
@@ -52,7 +70,7 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add alpine
+          git add -A alpine
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Update Alpine riscv64 mirror'
+          git commit -m 'Update installable Alpine riscv64 mirror'
           git push
