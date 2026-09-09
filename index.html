@@ -7,6 +7,15 @@
   <link rel="stylesheet" href="/css/terminal.css">
 </head>
 <body>
+  <div id="task-status" class="task-status" hidden>
+    <div class="task-head">
+      <strong id="task-title">Working…</strong>
+      <span id="task-pct">0%</span>
+    </div>
+    <div id="task-detail" class="task-detail"></div>
+    <div class="task-track"><div id="task-bar" class="task-bar"></div></div>
+  </div>
+
   <div id="o"></div>
   <div class="i">
     <span class="p" id="p"></span>
@@ -15,6 +24,7 @@
 
   <script src="/lib/rv64exec.js"></script>
   <script src="/lib/posix-core.js"></script>
+  <script src="/lib/progress.js"></script>
   <script src="/lib/apk.js"></script>
   <script src="/lib/systemd.js"></script>
   <script src="/lib/wayland.js"></script>
