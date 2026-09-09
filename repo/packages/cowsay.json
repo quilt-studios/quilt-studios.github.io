@@ -1,0 +1,12 @@
+{
+  "name": "cowsay",
+  "version": "1.0.0",
+  "description": "ASCII cow message utility",
+  "files": [
+    {
+      "path": "/usr/bin/cowsay",
+      "mode": "0755",
+      "content": "#!/bin/sh\necho  ____________________\necho \"< POSIX.js says moo >\"\necho  --------------------\necho \"        \\\\   ^__^\"\necho \"         \\\\  (oo)\\_______\"\necho \"            (__)\\       )\\/\\\\\"\necho \"                ||----w |\"\necho \"                ||     ||\"\n"
+    }
+  ]
+}
