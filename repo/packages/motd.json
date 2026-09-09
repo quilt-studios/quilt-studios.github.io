@@ -1,0 +1,12 @@
+{
+  "name": "motd",
+  "version": "1.0.0",
+  "description": "Installs a message of the day",
+  "files": [
+    {
+      "path": "/etc/motd",
+      "mode": "0644",
+      "content": "Welcome to POSIX.js package-managed userspace.\nUse: pkg update && pkg search\n"
+    }
+  ]
+}
