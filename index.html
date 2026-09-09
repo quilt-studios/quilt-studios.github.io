@@ -1,1 +1,513 @@
-<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>POSIX.js</title><style>:root{color-scheme:dark;--g:#39ff6a;--m:#89929b}*{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:#e8edf2;font:14px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}body{display:grid;grid-template-rows:40px 1fr}header{display:flex;align-items:center;gap:9px;padding:0 12px;background:#111;border-bottom:1px solid #252a2f}.dot{width:11px;height:11px;border-radius:50%}.r{background:#ff5f56}.y{background:#ffbd2e}.g{background:#27c93f}.title{font-weight:700}.meta{margin-left:auto;color:var(--m)}main{min-height:0;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,.75fr)}#shell{min-height:0;display:grid;grid-template-rows:1fr auto;border-right:1px solid #252a2f}#term{padding:14px;overflow:auto;white-space:pre-wrap;line-height:1.45}.line{display:flex;padding:10px 12px;border-top:1px solid #252a2f}.prompt{color:var(--g);margin-right:8px;white-space:nowrap}#cmd{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font:inherit}aside{min-height:0;display:grid;grid-template-rows:auto 1fr auto}.bar{display:flex;gap:6px;flex-wrap:wrap;padding:8px;background:#090909;border-bottom:1px solid #252a2f}button{background:#15191d;color:#eee;border:1px solid #30363d;border-radius:7px;padding:7px 9px;font:inherit;font-size:12px}#wrap{display:grid;place-items:center;overflow:auto;padding:10px;background:#030303}canvas{width:min(100%,900px);height:auto;aspect-ratio:4/3;background:#000;border:1px solid #252a2f;image-rendering:pixelated;touch-action:none}.status{padding:8px 10px;border-top:1px solid #252a2f;color:var(--m);font-size:11px}@media(max-width:850px){main{grid-template-columns:1fr;grid-template-rows:58vh 42vh}#shell{border-right:0;border-bottom:1px solid #252a2f}.meta{display:none}}</style></head><body><header><i class="dot r"></i><i class="dot y"></i><i class="dot g"></i><span class="title">user@posixjs: ~ — Terminal</span><span class="meta">IndexedDB FS · /bin/sh · framebuffer/VNC · <b id="boot" style="color:var(--g)">BOOT</b></span></header><main><section id="shell"><div id="term"></div><div class="line"><span id="prompt" class="prompt"></span><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus></div></section><aside><div class="bar"><button id="bBoot">Boot</button><button id="bSync">sync</button><button id="bFiles">Files</button><button id="bTop">top</button><button id="bPkg">pkg</button><button id="bGui">startx</button><button id="bVnc">VNC WS</button><button id="bReset">reset FS</button></div><div id="wrap"><canvas id="screen" width="800" height="600" tabindex="0"></canvas></div><div id="status" class="status">TTY /dev/pts/0 · framebuffer /dev/fb0</div></aside></main><script>(()=>{'use strict';const $=s=>document.querySelector(s),term=$('#term'),inp=$('#cmd'),pr=$('#prompt'),bootEl=$('#boot'),status=$('#status'),cv=$('#screen'),cx=cv.getContext('2d',{alpha:false});let cwd='/home/user',hist=[],hp=0,vnc=null;const env={USER:'user',HOME:'/home/user',SHELL:'/bin/sh',PATH:'/bin:/usr/bin:/usr/local/bin',HOSTNAME:'posixjs',PWD:'/home/user'},pkgs=new Set(['coreutils','shell','idbfs','vnc']),procs=new Map([[1,{pid:1,cmd:'/sbin/init',s:'S'}],[2,{pid:2,cmd:'/bin/sh',s:'S'}]]);const now=()=>new Date().toISOString();const FS={n:new Map(),norm(p){if(!p)return cwd;if(p[0]=='~')p=env.HOME+p.slice(1);if(p[0]!='/')p=cwd+'/'+p;const a=[];for(const x of p.split('/')){if(!x||x=='.')continue;x=='..'?a.pop():a.push(x)}return'/'+a.join('/')},par(p){p=this.norm(p);if(p=='/')return'/';let a=p.split('/');a.pop();return a.join('/')||'/'},base(p){return this.norm(p).split('/').pop()||'/'},has(p){return this.n.has(this.norm(p))},stat(p){return this.n.get(this.norm(p))||null},mkdir(p,r=false){p=this.norm(p);if(this.has(p))return;const q=this.par(p);if(!this.has(q)){if(r)this.mkdir(q,true);else throw Error('parent missing')}this.n.set(p,{t:'d',m:'0755',time:now()})},write(p,d,app=false){p=this.norm(p);if(!this.has(this.par(p)))throw Error('no such directory');const o=this.stat(p);this.n.set(p,{t:'f',m:o?.m||'0644',time:now(),d:app&&o?.t=='f'?o.d+String(d):String(d)})},read(p){const n=this.stat(p);if(!n)throw Error('no such file');if(n.t!='f')throw Error('is a directory');return n.d},list(p){p=this.norm(p);const n=this.stat(p);if(!n)throw Error('not found');if(n.t=='f')return[this.base(p)];const pre=p=='/'?'/':p+'/',s=new Set;for(const k of this.n.keys())if(k.startsWith(pre)&&k!=p){const r=k.slice(pre.length);if(r&&!r.includes('/'))s.add(r)}return[...s].sort()},rm(p,r=false){p=this.norm(p);if(p=='/')throw Error('refusing /');const n=this.stat(p);if(!n)throw Error('not found');const c=[...this.n.keys()].filter(k=>k.startsWith(p+'/'));if(n.t=='d'&&c.length&&!r)throw Error('directory not empty');c.forEach(k=>this.n.delete(k));this.n.delete(p)}};function fresh(){FS.n.clear();FS.n.set('/',{t:'d',m:'0755',time:now()});['/bin','/boot','/dev','/etc','/home','/home/user','/lib','/media','/mnt','/opt','/proc','/root','/run','/sbin','/srv','/sys','/tmp','/usr','/usr/bin','/usr/lib','/usr/local','/usr/local/bin','/var','/var/lib','/var/lib/pkg','/var/log'].forEach(x=>FS.mkdir(x,true));FS.write('/etc/os-release','NAME=POSIX.js\nID=posixjs\nPRETTY_NAME="POSIX.js Browser Linux Environment"\nVERSION=2\n');FS.write('/etc/hostname','posixjs\n');FS.write('/etc/passwd','root:x:0:0:root:/root:/bin/sh\nuser:x:1000:1000:Browser User:/home/user:/bin/sh\n');FS.write('/etc/hosts','127.0.0.1 localhost posixjs\n');FS.write('/etc/fstab','indexeddbfs / idbfs rw 0 0\ntmpfs /tmp tmpfs rw 0 0\n');FS.write('/etc/motd','POSIX.js Browser Linux Environment\nPersistent IndexedDB filesystem enabled.\n');FS.write('/home/user/README','POSIX.js\nTry: help, ls /, cat /etc/os-release, pkg list, top, startx\n');FS.write('/home/user/demo.sh','#!/bin/sh\necho Hello from POSIX.js\nmkdir -p /tmp/demo\necho persistent > /tmp/demo/test.txt\ncat /tmp/demo/test.txt\n');FS.write('/var/log/boot.log','boot '+now()+'\n')}const DB='posixjs-db',ST='fs';function odb(){return new Promise((ok,no)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.objectStoreNames.contains(ST)||r.result.createObjectStore(ST);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}async function get(k){const d=await odb();return new Promise((ok,no)=>{const r=d.transaction(ST).objectStore(ST).get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})}async function put(k,v){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(ST,'readwrite');t.objectStore(ST).put(v,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})}async function wipe(){const d=await odb();return new Promise((ok,no)=>{const t=d.transaction(ST,'readwrite');t.objectStore(ST).clear();t.oncomplete=ok;t.onerror=()=>no(t.error)})}async function sync(){await put('fs',[...FS.n]);await put('state',{cwd,env});status.textContent='filesystem synced · '+new Date().toLocaleTimeString()}function print(s=''){term.textContent+=String(s)+'\n';term.scrollTop=term.scrollHeight}function promptSet(){env.PWD=cwd;pr.textContent=`user@posixjs:${cwd.replace(env.HOME,'~')}$`}let hook=s=>print(s);const out=(s='')=>hook(String(s));function lex(s){const a=[];let c='',q=null,e=false;for(let i=0;i<s.length;i++){const x=s[i];if(e){c+=x;e=false;continue}if(x=='\\'){e=true;continue}if(q){if(x==q)q=null;else c+=x;continue}if(x=='"'||x=="'"){q=x;continue}if(/\s/.test(x)){if(c){a.push(c);c=''}continue}if('|><;'.includes(x)){if(c){a.push(c);c=''};if(x=='>'&&s[i+1]=='>'){a.push('>>');i++}else a.push(x);continue}c+=x}if(c)a.push(c);return a}const C={};function add(n,fn,h){C[n]={fn,h}};add('help',()=>{out('POSIX.js commands:');Object.keys(C).sort().forEach(n=>out('  '+n.padEnd(11)+(C[n].h||'')));out('\nShell: | > >> < ; $VARS .sh')},'show help');add('pwd',()=>out(cwd),'working directory');add('whoami',()=>out('user'),'current user');add('hostname',()=>out('posixjs'),'hostname');add('clear',()=>term.textContent='','clear terminal');add('echo',a=>out(a.join(' ')),'print text');add('date',()=>out(new Date().toString()),'date/time');add('uname',a=>out(a.includes('-a')?'POSIX.js posixjs 2.0 browser-js GNU/POSIX':'POSIX.js'),'system info');add('id',()=>out('uid=1000(user) gid=100(users) groups=100(users)'),'identity');add('env',()=>Object.entries(env).forEach(([k,v])=>out(k+'='+v)),'environment');add('cd',a=>{const p=FS.norm(a[0]||env.HOME),n=FS.stat(p);if(!n||n.t!='d')throw Error('cd: no such directory');cwd=p;promptSet()},'change directory');add('ls',a=>{const long=a.includes('-l'),p=a.filter(x=>!x.startsWith('-'))[0]||cwd,n=FS.stat(p);if(!n)throw Error('ls: not found');if(n.t=='f')return out(FS.base(p));const names=FS.list(p);if(!long)return out(names.join('  '));names.forEach(x=>{const q=(FS.norm(p)=='/'?'':FS.norm(p))+'/'+x,s=FS.stat(q);out(`${s.t=='d'?'d':'-'}${s.m} 1 user users ${s.t=='f'?s.d.length:0} ${x}`)})},'list files');add('mkdir',a=>{const r=a.includes('-p');a.filter(x=>!x.startsWith('-')).forEach(x=>FS.mkdir(x,r))},'make directory');add('touch',a=>a.forEach(x=>FS.has(x)?FS.stat(x).time=now():FS.write(x,'')),'create file');add('cat',a=>a.forEach(x=>out(FS.read(x).replace(/\n$/,''))),'print file');add('rm',a=>{const r=a.includes('-r')||a.includes('-R');a.filter(x=>!x.startsWith('-')).forEach(x=>FS.rm(x,r))},'remove');add('head',a=>out(FS.read(a[a.length-1]).split('\n').slice(0,10).join('\n')),'first lines');add('tail',a=>out(FS.read(a[a.length-1]).split('\n').slice(-10).join('\n')),'last lines');add('grep',a=>{const p=a[a.length-1],re=new RegExp(a[0]);FS.read(p).split('\n').forEach(l=>re.test(l)&&out(l))},'search text');add('find',a=>{const r=FS.norm(a[0]||cwd);[...FS.n.keys()].sort().filter(k=>k==r||k.startsWith(r+'/')).forEach(out)},'find files');add('chmod',a=>{const n=FS.stat(a[1]);if(!n)throw Error('not found');n.m=a[0]},'change mode');add('stat',a=>{const n=FS.stat(a[0]);if(!n)throw Error('not found');out(`File: ${FS.norm(a[0])}\nType: ${n.t=='d'?'directory':'file'}\nMode: ${n.m}\nModify: ${n.time}\nSize: ${n.t=='f'?n.d.length:0}`)},'file status');add('df',()=>out('Filesystem Size Used Avail Use% Mounted on\nindexeddbfs virtual -- -- -- /\ntmpfs virtual -- -- -- /tmp'),'disk free');add('du',a=>{const r=FS.norm(a[0]||cwd);let z=0;for(const[k,v]of FS.n)if((k==r||k.startsWith(r+'/'))&&v.t=='f')z+=v.d.length;out(`${Math.ceil(z/1024)}K\t${r}`)},'disk usage');add('mount',()=>out('indexeddbfs on / type idbfs (rw,persistent)\ntmpfs on /tmp type tmpfs (rw)\nproc on /proc type proc (simulated)\nsysfs on /sys type sysfs (simulated)'),'mounts');add('lsblk',()=>out('NAME SIZE TYPE MOUNTPOINT\nidb0 virtual disk /\ntmp0 virtual disk /tmp'),'block devices');add('tree',a=>{const r=FS.norm(a[0]||cwd);out(r);for(const k of [...FS.n.keys()].filter(k=>k.startsWith(r+'/')).sort()){const rel=k.slice(r.length+1),d=rel.split('/').length;if(d<5)out('  '.repeat(d-1)+'└── '+FS.base(k))}},'directory tree');add('ps',()=>{out('PID TTY STAT CMD');procs.forEach(p=>out(`${p.pid} pts/0 ${p.s} ${p.cmd}`))},'process list');add('top',()=>{out('top - POSIX.js process monitor\nPID USER S CMD');procs.forEach(p=>out(`${p.pid} user ${p.s} ${p.cmd}`))},'process monitor');add('jobs',()=>procs.forEach(p=>p.pid>2&&out(`[${p.pid}] ${p.s} ${p.cmd}`)),'jobs');add('uptime',()=>out(`up ${Math.floor(performance.now()/60000)} min, 1 user, load average: 0.00, 0.01, 0.05`),'uptime');add('free',()=>out('Mem: browser-managed'),'memory');add('dmesg',()=>out(FS.read('/var/log/boot.log').trim()),'kernel log');add('man',a=>out(C[a[0]]?`${a[0]} - ${C[a[0]].h}`:`No manual entry for ${a[0]||''}`),'manual');add('which',a=>a.forEach(n=>out(C[n]?'/bin/'+n:`${n} not found`)),'locate command');add('pkg',a=>{const s=a[0]||'list';if(s=='list')return [...pkgs].sort().forEach(x=>out(x+' 1.0 installed'));if(s=='search')return ['curl','wget','git','python','make','nano','openssh','busybox','gcc'].filter(x=>x.includes(a[1]||'')).forEach(x=>out(x+' - virtual package'));if(s=='install'){a.slice(1).forEach(x=>{pkgs.add(x);out('installed '+x)});return}if(s=='remove'){a.slice(1).forEach(x=>{pkgs.delete(x);out('removed '+x)});return}out('usage: pkg list|search|install|remove')},'package manager');add('apt',a=>a[0]=='update'?out('Package lists are current.'):C.pkg.fn(a[0]=='install'?['install',...a.slice(1)]:a),'apt wrapper');add('ping',a=>{const h=a.filter(x=>!x.startsWith('-'))[0]||'localhost';out(`PING ${h} (browser sandbox)`);for(let i=1;i<=4;i++)out(`64 bytes from ${h}: icmp_seq=${i} ttl=64 time=${(1+Math.random()*3).toFixed(2)} ms`);out('4 packets transmitted, 4 received, 0% packet loss')},'simulated ping');add('ip',a=>out(a[0]=='route'?'default via browser dev web0':'1: lo <LOOPBACK,UP> 127.0.0.1/8\n2: web0 <UP> browser-managed'),'network');add('ifconfig',()=>C.ip.fn([]),'network interfaces');add('curl',a=>out('curl: browser CORS/security rules apply\nURL: '+(a[a.length-1]||'')),'HTTP client');add('wget',a=>C.curl.fn(a),'download URL');add('hexdump',a=>{const b=new TextEncoder().encode(FS.read(a[a.length-1]));for(let i=0;i<b.length;i+=16)out(i.toString(16).padStart(8,'0')+'  '+[...b.slice(i,i+16)].map(x=>x.toString(16).padStart(2,'0')).join(' '))},'hex dump');add('base64',a=>out(btoa(unescape(encodeURIComponent(FS.read(a[a.length-1]))))),'base64');add('sha256sum',async a=>{const p=a[0],b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(FS.read(p)));out([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')+'  '+p)},'checksum');add('history',()=>hist.forEach((x,i)=>out(`${i+1} ${x}`)),'history');add('nano',a=>edit(a[0]||'untitled.txt'),'editor');add('vi',a=>edit(a[0]||'untitled.txt'),'editor');add('sh',a=>script(a[0]),'run script');add('bash',a=>script(a[0]),'run script');add('source',a=>script(a[0]),'source script');add('startx',()=>{gui();out('X-like framebuffer session started on :0')},'GUI');add('vncserver',()=>out('VNC framebuffer service ready in WebSocket gateway mode'),'VNC service');add('sync',async()=>{await sync();out('filesystem synced')},'sync FS');add('reboot',async()=>boot(),'reboot');add('poweroff',()=>{bootEl.textContent='HALTED';out('System halted. Press Boot.')},'power off');function edit(p){const v=prompt('Edit '+FS.norm(p),FS.has(p)?FS.read(p):'');if(v!==null)FS.write(p,v)}async function script(p){for(let l of FS.read(p).split(/\r?\n/)){l=l.trim();if(l&&!l.startsWith('#'))await run(l)}}async function exec(tok,stdin=''){if(!tok.length)return'';tok=tok.map(x=>x.replace(/\$([A-Z_][A-Z0-9_]*)/gi,(_,k)=>env[k]??''));const n=tok.shift();if((n.endsWith('.sh')||n.includes('/'))&&FS.has(n)){await script(n);return''}if(!C[n])throw Error(n+': command not found');let buf='',old=hook;hook=s=>buf+=s+'\n';env.STDIN=stdin;try{await C[n].fn(tok)}finally{hook=old}return buf}async function pipeline(tok){let seg=[],cur=[];for(const t of tok){if(t=='|'){seg.push(cur);cur=[]}else cur.push(t)}seg.push(cur);let data='';for(let s of seg){let of=null,app=false,inf=null,cl=[];for(let i=0;i<s.length;i++){if(s[i]=='>'||s[i]=='>>'){app=s[i]=='>>';of=s[++i]}else if(s[i]=='<')inf=s[++i];else cl.push(s[i])}if(inf)data=FS.read(inf);data=await exec(cl,data);if(of){FS.write(of,data,app);data=''}}if(data)print(data.replace(/\n$/,''))}async function run(line){for(const part of line.split(';')){const t=lex(part.trim());if(t.length)try{await pipeline(t)}catch(e){print('sh: '+e.message)}}await sync()}async function boot(){bootEl.textContent='BOOTING';term.textContent='';print('POSIX.js browser kernel 2.0');print('Mounting IndexedDB filesystem...');const f=await get('fs');if(f)FS.n=new Map(f);else{fresh();await sync()}const st=await get('state');if(st){cwd=st.cwd||cwd;Object.assign(env,st.env||{})}promptSet();print('Mounting /proc, /sys, /dev, /mnt...');print('Starting /bin/sh...');if(FS.has('/etc/motd'))print(FS.read('/etc/motd').trim());print("Ready. Type 'help'.");bootEl.textContent='RUNNING';draw()}function draw(){cx.fillStyle='#0a0d10';cx.fillRect(0,0,800,600);cx.fillStyle='#dce7ee';cx.font='28px ui-monospace';cx.fillText('POSIX.js Framebuffer',35,55);cx.fillStyle='#39ff6a';cx.font='18px ui-monospace';cx.fillText('/dev/fb0 · local display :0',35,90);cx.fillStyle='#171c21';cx.fillRect(35,125,730,390);cx.fillStyle='#aab4ba';cx.font='16px ui-monospace';['Display device: /dev/fb0','Mouse: /dev/input/mouse0','Keyboard: /dev/input/event0','','Use startx for GUI demo.','Use VNC WS for a WebSocket framebuffer gateway.'].forEach((x,i)=>cx.fillText(x,58,165+i*28))}function gui(){draw();cx.fillStyle='#eee';cx.fillRect(145,145,510,310);cx.fillStyle='#222';cx.fillRect(145,145,510,38);cx.fillStyle='#fff';cx.font='16px sans-serif';cx.fillText('POSIX.js Desktop',165,170);cx.fillStyle='#111';cx.font='20px ui-monospace';cx.fillText('Browser Linux GUI session :0',185,245);cx.fillText('IndexedDB home: /home/user',185,285)}async function connect(){const u=prompt('WebSocket VNC/framebuffer gateway','ws://localhost:6080/');if(!u)return;try{vnc?.close();vnc=new WebSocket(u);vnc.onopen=()=>status.textContent='VNC websocket connected';vnc.onclose=()=>status.textContent='VNC disconnected';vnc.onerror=()=>status.textContent='VNC websocket error'}catch(e){status.textContent=e.message}}cv.onkeydown=e=>vnc?.readyState==1&&vnc.send(JSON.stringify({type:'key',key:e.key,down:true}));cv.onpointerdown=e=>{cv.focus();vnc?.readyState==1&&vnc.send(JSON.stringify({type:'pointer',x:e.offsetX,y:e.offsetY,buttons:e.buttons}))};inp.onkeydown=async e=>{if(e.key=='Enter'){const l=inp.value;inp.value='';if(l.trim()){hist.push(l);hp=hist.length;print(pr.textContent+' '+l);await run(l)}promptSet()}else if(e.key=='ArrowUp'){e.preventDefault();if(hp>0)inp.value=hist[--hp]||''}else if(e.key=='ArrowDown'){e.preventDefault();if(hp<hist.length-1)inp.value=hist[++hp]||'';else{hp=hist.length;inp.value=''}}else if(e.key=='Tab'){e.preventDefault();const p=inp.value.split(/\s/).pop(),o=Object.keys(C).filter(n=>n.startsWith(p));if(o.length==1)inp.value=inp.value.slice(0,-p.length)+o[0];else if(o.length>1)print(o.join('  '))}};$('#bBoot').onclick=boot;$('#bSync').onclick=sync;$('#bFiles').onclick=()=>alert([...FS.n.keys()].sort().join('\n'));$('#bTop').onclick=()=>{print(pr.textContent+' top');run('top')};$('#bPkg').onclick=()=>{print(pr.textContent+' pkg list');run('pkg list')};$('#bGui').onclick=gui;$('#bVnc').onclick=connect;$('#bReset').onclick=async()=>{if(confirm('Delete persistent filesystem?')){await wipe();fresh();await sync();await boot()}};window.POSIXJS={FS,C,run,sync,boot};boot()})();</script></body></html>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>POSIX.js — Browser Linux Terminal</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#050607; --panel:#0b0d0f; --line:#22272b; --text:#e9eef2; --muted:#7f8b93; --accent:#33ff66;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+body{display:grid;grid-template-rows:auto 1fr}
+header{display:flex;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);background:#111;position:sticky;top:0;z-index:4}
+header b{font-size:14px}
+header span{font-size:12px;color:var(--muted)}
+main{min-height:0;display:grid;grid-template-columns:minmax(0,1.8fr) minmax(300px,.7fr);gap:0}
+section{min-height:0}
+.shell{display:grid;grid-template-rows:1fr auto;border-right:1px solid var(--line)}
+#terminal{overflow:auto;padding:14px;white-space:pre-wrap;line-height:1.45}
+.promptline{display:flex;border-top:1px solid var(--line);padding:10px;background:#000}
+#prompt{color:var(--accent);margin-right:8px;white-space:nowrap}
+#cmd{flex:1;background:transparent;border:0;outline:0;color:var(--text);font:inherit}
+.side{display:grid;grid-template-rows:auto 1fr auto;min-height:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border-bottom:1px solid var(--line)}
+button,input{font:inherit}
+button{background:#111417;border:1px solid #2b3237;color:var(--text);padding:7px 10px;border-radius:8px}
+button:hover{border-color:#4b5961}
+#screenWrap{min-height:0;display:grid;place-items:center;padding:12px;overflow:auto;background:#050505}
+#screen{width:min(100%,960px);height:auto;aspect-ratio:4/3;border:1px solid var(--line);background:#000;image-rendering:pixelated;touch-action:none}
+.status{font-size:12px;color:var(--muted);padding:9px 10px;border-top:1px solid var(--line)}
+.tag{padding:2px 6px;border:1px solid #2f3b31;border-radius:999px;color:var(--accent)}
+@media(max-width:850px){
+  main{grid-template-columns:1fr;grid-template-rows:minmax(55vh,1fr) 45vh}
+  .shell{border-right:0;border-bottom:1px solid var(--line)}
+}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="width:12px;height:12px;border-radius:50%;background:#ff5f56;display:inline-block"></span>
+    <span style="width:12px;height:12px;border-radius:50%;background:#ffbd2e;display:inline-block"></span>
+    <span style="width:12px;height:12px;border-radius:50%;background:#27c93f;display:inline-block"></span>
+  </div>
+  <b style="margin-left:8px">user@posixjs: ~ — Terminal</b>
+  <span style="margin-left:auto">POSIX.js · IndexedDB FS · /bin/sh · VNC</span>
+  <span class="tag" id="bootTag">BOOTING</span>
+</header>
+
+<main>
+  <section class="shell">
+    <div id="terminal"></div>
+    <div class="promptline"><span id="prompt"></span><input id="cmd" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus></div>
+  </section>
+
+  <section class="side">
+    <div class="toolbar">
+      <button id="bootBtn">Boot</button>
+      <button id="saveBtn">Sync FS</button>
+      <button id="resetBtn">Factory Reset</button>
+      <button id="demoBtn">GUI Demo</button>
+      <button id="connectBtn">VNC WS</button>
+    </div>
+    <div id="screenWrap"><canvas id="screen" width="800" height="600" tabindex="0"></canvas></div>
+    <div class="status" id="status">TTY ready · /dev/pts/0 · framebuffer ready</div>
+  </section>
+</main>
+
+<script>
+(() => {
+"use strict";
+
+/* ===========================
+   POSIX.js Browser OS
+   =========================== */
+
+const DB_NAME = "posixjs-db";
+const DB_STORE = "fs";
+const DB_VER = 1;
+
+const term = document.querySelector("#terminal");
+const cmdInput = document.querySelector("#cmd");
+const promptEl = document.querySelector("#prompt");
+const bootTag = document.querySelector("#bootTag");
+const statusEl = document.querySelector("#status");
+const canvas = document.querySelector("#screen");
+const ctx = canvas.getContext("2d", {alpha:false});
+
+let cwd = "/home/user";
+let user = "user";
+let hostname = "browser";
+let env = {
+  USER:"user",
+  HOME:"/home/user",
+  SHELL:"/bin/sh",
+  PATH:"/bin:/usr/bin:/usr/local/bin",
+  PWD:"/home/user",
+  HOSTNAME:"browser"
+};
+let history = [];
+let historyPos = 0;
+let vncSocket = null;
+let packages=new Set(['coreutils','shell','idbfs','vnc']);
+
+const now = () => new Date().toISOString();
+
+const FS = {
+  nodes: new Map(),
+
+  normalize(path){
+    if(!path) return cwd;
+    if(path.startsWith("~")) path = env.HOME + path.slice(1);
+    if(!path.startsWith("/")) path = cwd.replace(/\/$/,"") + "/" + path;
+    const out=[];
+    for(const p of path.split("/")){
+      if(!p || p===".") continue;
+      if(p==="..") out.pop();
+      else out.push(p);
+    }
+    return "/" + out.join("/");
+  },
+
+  parent(path){
+    path=this.normalize(path);
+    if(path==="/") return "/";
+    const a=path.split("/"); a.pop();
+    return a.join("/") || "/";
+  },
+
+  base(path){
+    path=this.normalize(path);
+    return path==="/" ? "/" : path.split("/").pop();
+  },
+
+  exists(path){ return this.nodes.has(this.normalize(path)); },
+  stat(path){ return this.nodes.get(this.normalize(path)) || null; },
+
+  mkdir(path, recursive=false){
+    path=this.normalize(path);
+    if(this.exists(path)) {
+      if(this.stat(path).type!=="dir") throw new Error("not a directory");
+      return;
+    }
+    const parent=this.parent(path);
+    if(!this.exists(parent)){
+      if(recursive) this.mkdir(parent,true);
+      else throw new Error("parent does not exist");
+    }
+    this.nodes.set(path,{type:"dir",mode:"0755",mtime:now()});
+  },
+
+  writeFile(path, data, append=false){
+    path=this.normalize(path);
+    const parent=this.parent(path);
+    if(!this.exists(parent)) throw new Error("no such directory: "+parent);
+    const old=this.stat(path);
+    const content = append && old && old.type==="file" ? old.data + data : String(data);
+    this.nodes.set(path,{type:"file",mode: old?.mode || "0644",mtime:now(),data:content});
+  },
+
+  readFile(path){
+    const n=this.stat(path);
+    if(!n) throw new Error("no such file");
+    if(n.type!=="file") throw new Error("is a directory");
+    if(n.binary) throw new Error("binary file; use a binary-aware command");
+    return n.data;
+  },
+
+  writeBinary(path, bytes){
+    path=this.normalize(path);
+    const parent=this.parent(path);
+    if(!this.exists(parent)) this.mkdir(parent,true);
+    const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+    this.nodes.set(path,{type:"file",mode:"0644",mtime:now(),binary:true,data:u8});
+  },
+
+  readBinary(path){
+    const n=this.stat(path);
+    if(!n) throw new Error("no such file");
+    if(n.type!=="file") throw new Error("is a directory");
+    if(n.binary) return n.data instanceof Uint8Array?n.data:new Uint8Array(n.data);
+    return new TextEncoder().encode(String(n.data));
+  },
+
+  list(path){
+    path=this.normalize(path);
+    const n=this.stat(path);
+    if(!n) throw new Error("no such file or directory");
+    if(n.type==="file") return [this.base(path)];
+    const pfx = path==="/" ? "/" : path + "/";
+    const s=new Set();
+    for(const k of this.nodes.keys()){
+      if(k.startsWith(pfx) && k!==path){
+        const rest=k.slice(pfx.length);
+        if(rest && !rest.includes("/")) s.add(rest);
+      }
+    }
+    return [...s].sort();
+  },
+
+  rm(path, recursive=false){
+    path=this.normalize(path);
+    if(path==="/") throw new Error("refusing to remove /");
+    const n=this.stat(path);
+    if(!n) throw new Error("no such file");
+    if(n.type==="dir"){
+      const children=[...this.nodes.keys()].filter(k=>k.startsWith(path+"/"));
+      if(children.length && !recursive) throw new Error("directory not empty");
+      for(const k of children) this.nodes.delete(k);
+    }
+    this.nodes.delete(path);
+  },
+
+  mv(src,dst){
+    src=this.normalize(src); dst=this.normalize(dst);
+    const n=this.stat(src); if(!n) throw new Error("no such file");
+    if(n.type==="file"){
+      this.nodes.set(dst,{...n,mtime:now()});
+      this.nodes.delete(src);
+    }else{
+      const pairs=[...this.nodes.entries()].filter(([k])=>k===src || k.startsWith(src+"/"));
+      for(const [k,v] of pairs){
+        this.nodes.delete(k);
+        this.nodes.set(dst + k.slice(src.length), {...v,mtime:now()});
+      }
+    }
+  },
+
+  cp(src,dst,recursive=false){
+    src=this.normalize(src); dst=this.normalize(dst);
+    const n=this.stat(src); if(!n) throw new Error("no such file");
+    if(n.type==="file") this.nodes.set(dst,{...n,mtime:now()});
+    else{
+      if(!recursive) throw new Error("omitting directory");
+      this.mkdir(dst,true);
+      for(const [k,v] of [...this.nodes.entries()].filter(([k])=>k.startsWith(src+"/"))){
+        this.nodes.set(dst+k.slice(src.length), structuredClone(v));
+      }
+    }
+  },
+
+  serialize(){ return [...this.nodes.entries()]; },
+  load(entries){ this.nodes=new Map(entries); }
+};
+
+async function openDB(){
+  return await new Promise((resolve,reject)=>{
+    const r=indexedDB.open(DB_NAME,DB_VER);
+    r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains(DB_STORE)) r.result.createObjectStore(DB_STORE); };
+    r.onsuccess=()=>resolve(r.result);
+    r.onerror=()=>reject(r.error);
+  });
+}
+async function dbGet(key){
+  const db=await openDB();
+  return await new Promise((res,rej)=>{
+    const r=db.transaction(DB_STORE,"readonly").objectStore(DB_STORE).get(key);
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function dbSet(key,val){
+  const db=await openDB();
+  return await new Promise((res,rej)=>{
+    const tx=db.transaction(DB_STORE,"readwrite");
+    tx.objectStore(DB_STORE).put(val,key);
+    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error);
+  });
+}
+async function dbClear(){
+  const db=await openDB();
+  return await new Promise((res,rej)=>{
+    const tx=db.transaction(DB_STORE,"readwrite");
+    tx.objectStore(DB_STORE).clear();
+    tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error);
+  });
+}
+
+function initFS(){
+  FS.nodes.clear();
+  const dirs = [
+    "/", "/bin","/boot","/dev","/etc","/home","/home/user","/lib","/lib64","/media","/mnt",
+    "/opt","/proc","/root","/run","/sbin","/srv","/sys","/tmp","/usr","/usr/bin","/usr/lib",
+    "/usr/local","/usr/local/bin","/var","/var/log","/var/tmp","/etc/pkg","/var/cache/pkg","/var/lib/pkg"
+  ];
+  FS.nodes.set("/",{type:"dir",mode:"0755",mtime:now()});
+  for(const d of dirs.slice(1)) FS.mkdir(d,true);
+  FS.writeFile("/etc/hostname","browser\n");
+  FS.writeFile("/etc/os-release","NAME=POSIX.js\nID=posixjs\nPRETTY_NAME=\"POSIX.js Browser OS\"\nVERSION=1\n");
+  FS.writeFile("/etc/passwd","root:x:0:0:root:/root:/bin/sh\nuser:x:1000:1000:Browser User:/home/user:/bin/sh\n");
+  FS.writeFile("/etc/group","root:x:0:\nusers:x:100:user\n");
+  FS.writeFile("/home/user/README","Welcome to POSIX.js\n\nType: help\nTry: uname -a, ls /, cat /etc/os-release, mkdir test, echo hello > test/a.txt\n");
+  FS.writeFile("/home/user/demo.sh",'#!/bin/sh\necho "Hello from POSIX.js"\nmkdir -p /tmp/demo\necho "$(date)" > /tmp/demo/time.txt\ncat /tmp/demo/time.txt\n');
+  FS.writeFile("/var/log/boot.log","POSIX.js initialized "+now()+"\n");
+  FS.writeFile("/etc/pkg/repos.json",JSON.stringify([{name:"official",url:"./repo/index.json",enabled:true}],null,2));
+  FS.writeFile("/var/lib/pkg/status.json",JSON.stringify({coreutils:{version:"1.0",files:[]},shell:{version:"1.0",files:[]},idbfs:{version:"1.0",files:[]},vnc:{version:"1.0",files:[]}},null,2));
+}
+
+function print(s=""){
+  term.textContent += String(s) + "\n";
+  term.scrollTop = term.scrollHeight;
+}
+function setPrompt(){
+  env.PWD=cwd;
+  promptEl.textContent = `${user}@${hostname}:${cwd.replace(env.HOME,"~")}$`;
+}
+function lex(line){
+  const out=[]; let cur="", q=null, esc=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(esc){cur+=c; esc=false; continue;}
+    if(c==="\\"){esc=true; continue;}
+    if(q){ if(c===q) q=null; else cur+=c; continue; }
+    if(c==="'"||c==='"'){q=c; continue;}
+    if(/\s/.test(c)){ if(cur){out.push(cur);cur="";} continue;}
+    if("|><;".includes(c)){
+      if(cur){out.push(cur);cur="";}
+      if((c===">"||c==="<") && line[i+1]===c){ out.push(c+c); i++; }
+      else out.push(c);
+      continue;
+    }
+    cur+=c;
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+function expand(s){
+  return s.replace(/\$([A-Za-z_][A-Za-z0-9_]*)|\$\{([^}]+)\}/g,(_,a,b)=>env[a||b]??"")
+          .replace(/\$\(([^)]+)\)/g,(_,inner)=>runCapture(inner));
+}
+function runCapture(line){
+  let buf="";
+  const old=outputHook; outputHook=(s)=>{buf += s + "\n";};
+  try{ executeLine(line,true); }catch{}
+  outputHook=old;
+  return buf.trimEnd();
+}
+let outputHook=(s)=>print(s);
+const out=(s="")=>outputHook(String(s));
+
+function globArg(a){
+  if(!a.includes("*")) return [a];
+  const path=FS.normalize(a);
+  const parent=FS.parent(path), pat=FS.base(path).replace(/[.+^${}()|[\]\\]/g,"\\$&").replace(/\*/g,".*");
+  try{
+    return FS.list(parent).filter(n=>new RegExp("^"+pat+"$").test(n)).map(n=>(parent==="/"?"":parent)+"/"+n);
+  }catch{return [a]}
+}
+
+const commands = {};
+function cmd(name, fn, help){ commands[name]={fn,help}; }
+
+cmd("help",(args)=>{
+  out("POSIX.js commands:");
+  const names=Object.keys(commands).sort();
+  for(const n of names) out("  "+n.padEnd(12)+(commands[n].help||""));
+  out("\nShell: pipes |, redirection > >> <, ;, variables $NAME, $(command), .sh scripts");
+},"show command help");
+cmd("pwd",()=>out(cwd),"print working directory");
+cmd("whoami",()=>out(user),"current user");
+cmd("hostname",()=>out(hostname),"show hostname");
+cmd("clear",()=>{term.textContent="";},"clear terminal");
+cmd("echo",(a)=>out(a.join(" ")),"print text");
+cmd("printf",(a)=>out((a[0]||"").replace(/\\n/g,"\n").replace(/\\t/g,"\t")),"formatted output");
+cmd("date",()=>out(new Date().toString()),"show date/time");
+cmd("uname",(a)=>out(a.includes("-a")?"POSIX.js browser 1.0 rv32/web #1 JS POSIX":"POSIX.js"),"system info");
+cmd("id",()=>out(`uid=1000(${user}) gid=100(users) groups=100(users)`),"user identity");
+cmd("true",()=>{},"return success");
+cmd("false",()=>{throw new Error("false");},"return failure");
+cmd("env",()=>Object.keys(env).sort().forEach(k=>out(k+"="+env[k])),"show environment");
+cmd("export",(a)=>{for(const x of a){const i=x.indexOf("="); if(i>0) env[x.slice(0,i)]=expand(x.slice(i+1));}},"set environment variable");
+cmd("cd",(a)=>{const p=FS.normalize(a[0]||env.HOME); const n=FS.stat(p); if(!n||n.type!=="dir")throw new Error("cd: no such directory"); cwd=p; setPrompt();},"change directory");
+cmd("ls",(a)=>{
+  let long=a.includes("-l"), all=a.includes("-a");
+  let targets=a.filter(x=>!x.startsWith("-"));
+  const p=targets[0]||cwd;
+  for(const target of globArg(p)){
+    const st=FS.stat(target);
+    if(!st) throw new Error("ls: cannot access "+target);
+    if(st.type==="file"){ out(long?`-${st.mode} 1 ${user} users ${st.data.length} ${st.mtime.slice(0,16)} ${FS.base(target)}`:FS.base(target)); continue;}
+    const names=FS.list(target).filter(n=>all||!n.startsWith("."));
+    if(long){
+      for(const n of names){
+        const s=FS.stat((target==="/"?"":target)+"/"+n);
+        out(`${s.type==="dir"?"d":"-"}${s.mode} 1 ${user} users ${s.type==="file"?(s.data?.byteLength??s.data?.length??0):0} ${s.mtime.slice(0,16)} ${n}`);
+      }
+    } else out(names.join("  "));
+  }
+},"list files");
+cmd("mkdir",(a)=>{const rec=a.includes("-p");for(const p of a.filter(x=>!x.startsWith("-"))) FS.mkdir(p,rec);},"make directories");
+cmd("touch",(a)=>{for(const p of a){ if(FS.exists(p)){FS.stat(p).mtime=now()} else FS.writeFile(p,"");}},"create/update files");
+cmd("cat",(a)=>{for(const p of a) out(FS.readFile(p).replace(/\n$/,""));},"print file");
+cmd("head",(a)=>{const p=a[a.length-1]; const n=parseInt(a[a.indexOf("-n")+1]||"10");out(FS.readFile(p).split("\n").slice(0,n).join("\n"));},"first lines");
+cmd("tail",(a)=>{const p=a[a.length-1]; const n=parseInt(a[a.indexOf("-n")+1]||"10");out(FS.readFile(p).split("\n").slice(-n).join("\n"));},"last lines");
+cmd("wc",(a)=>{const p=a[a.length-1], s=FS.readFile(p); const lines=s.split("\n").length-(s.endsWith("\n")?1:0), words=(s.match(/\S+/g)||[]).length;out(`${lines} ${words} ${s.length} ${p}`);},"count lines/words/bytes");
+cmd("rm",(a)=>{const rec=a.includes("-r")||a.includes("-R"); for(const p of a.filter(x=>!x.startsWith("-"))) FS.rm(p,rec);},"remove files");
+cmd("rmdir",(a)=>{for(const p of a) FS.rm(p,false);},"remove empty dirs");
+cmd("cp",(a)=>{const rec=a.includes("-r")||a.includes("-R"), x=a.filter(v=>!v.startsWith("-")); FS.cp(x[0],x[1],rec);},"copy files");
+cmd("mv",(a)=>FS.mv(a[0],a[1]),"move/rename");
+cmd("ln",(a)=>{ if(a.includes("-s")) FS.writeFile(a[a.length-1],`SYMLINK:${FS.normalize(a[a.length-2])}`); else FS.cp(a[0],a[1]); },"link files");
+cmd("chmod",(a)=>{const n=FS.stat(a[1]); if(!n)throw new Error("chmod: missing file"); n.mode=a[0];},"change mode bits");
+cmd("stat",(a)=>{const p=a[0],n=FS.stat(p); if(!n)throw new Error("stat: not found"); out(`File: ${FS.normalize(p)}\nType: ${n.type}\nMode: ${n.mode}\nModify: ${n.mtime}\nSize: ${n.type==="file"?(n.data?.byteLength??n.data?.length??0):0}`)},"file status");
+cmd("find",(a)=>{const root=FS.normalize(a[0]||cwd), nameIdx=a.indexOf("-name"), pat=nameIdx>=0?a[nameIdx+1]:null;const rx=pat?new RegExp("^"+pat.replace(/[.+^${}()|[\]\\]/g,"\\$&").replace(/\*/g,".*")+"$"):null;for(const k of [...FS.nodes.keys()].sort()) if((k===root||k.startsWith(root+"/")) && (!rx||rx.test(FS.base(k)))) out(k);},"find files");
+cmd("grep",(a)=>{const inv=a.includes("-v"), num=a.includes("-n");const x=a.filter(v=>!v.startsWith("-")); const pat=x[0], p=x[1];const re=new RegExp(pat);const lines=FS.readFile(p).split("\n");lines.forEach((line,i)=>{const ok=re.test(line); if(inv?!ok:ok) out((num?(i+1)+":" :"")+line);});},"search text");
+cmd("sed",(a)=>{const expr=a[0], p=a[1]; const m=expr.match(/^s(.)(.*?)\1(.*?)\1([g]?)$/);if(!m)throw new Error("sed: only s/// supported");const re=new RegExp(m[2],m[4]?"g":""); out(FS.readFile(p).replace(re,m[3]).replace(/\n$/,""));},"stream edit");
+cmd("sort",(a)=>out(FS.readFile(a[a.length-1]).split("\n").sort().join("\n")),"sort lines");
+cmd("uniq",(a)=>{const l=FS.readFile(a[a.length-1]).split("\n"); out(l.filter((x,i)=>i===0||x!==l[i-1]).join("\n"));},"unique adjacent lines");
+cmd("basename",(a)=>out(FS.base(a[0])),"strip directory");
+cmd("dirname",(a)=>out(FS.parent(a[0])),"strip filename");
+cmd("which",(a)=>{for(const n of a) out(commands[n]?"/bin/"+n:`which: no ${n} in PATH`)},"locate command");
+cmd("ps",()=>out("PID TTY   STAT CMD\n1   pts/0 S    /bin/sh\n2   pts/0 R    ps"),"process list");
+cmd("kill",()=>out("kill: simulated process model; no external processes"),"terminate process");
+cmd("df",()=>out("Filesystem      Size  Used Avail Use% Mounted on\nindexeddbfs    virtual  --   --    --   /\ntmpfs          virtual  --   --    --   /tmp"),"disk free");
+cmd("mount",()=>out("indexeddbfs on / type idbfs (rw,persistent)\ntmpfs on /tmp type memory (rw)\nproc on /proc type proc (ro,simulated)\nsysfs on /sys type sysfs (ro,simulated)"),"show mounts");
+cmd("free",()=>out("              total        used        free\nMem:        browser-managed       --          --"),"memory info");
+cmd("dmesg",()=>out(FS.readFile("/var/log/boot.log").trimEnd()),"kernel log");
+cmd("sleep",(a)=>out(`sleep ${a[0]||1}: cooperative no-op in this single-thread shell`),"delay");
+cmd("sync",async()=>{await saveFS(); out("filesystem synced");},"sync filesystem");
+cmd("reboot",async()=>{await saveFS(); await boot();},"reboot browser OS");
+cmd("shutdown",async()=>{await saveFS(); out("System halted. Press Boot to resume."); bootTag.textContent="HALTED";},"halt");
+cmd("history",()=>history.forEach((h,i)=>out(`${String(i+1).padStart(4)}  ${h}`)),"command history");
+cmd("alias",()=>out("alias support: not persisted in this build"),"aliases");
+cmd("sh",async(a)=>await runScript(a[0]),"run shell script");
+cmd("bash",async(a)=>await runScript(a[0]),"bash-compatible subset");
+cmd("nano",(a)=>editor(a[0]||"untitled.txt"),"simple file editor");
+cmd("vi",(a)=>editor(a[0]||"untitled.txt"),"simple file editor");
+cmd("clearfs",async()=>{await dbClear(); initFS(); await saveFS(); out("filesystem reset");},"reset persistent filesystem");
+
+cmd("man",(a)=>{const n=a[0];if(!n)return out("What manual page do you want?");if(commands[n])out(`${n} - ${commands[n].help||"POSIX.js command"}\n\nBrowser implementation of ${n}.`);else out(`No manual entry for ${n}`)},"manual pages");
+cmd("uptime",()=>out(`up ${Math.floor(performance.now()/60000)} min, 1 user, load average: 0.00, 0.01, 0.05`),"system uptime");
+const processes=new Map([[1,{pid:1,state:"S",cmd:"/bin/sh"}],[2,{pid:2,state:"S",cmd:"posixjs-ui"}]]);
+cmd("top",()=>{out("top - POSIX.js process monitor\nPID USER  S CMD");for(const p of processes.values())out(`${String(p.pid).padStart(3)} user  ${p.state} ${p.cmd}`)},"process monitor");
+cmd("jobs",()=>{for(const p of processes.values())if(p.pid>2)out(`[${p.pid}] ${p.state} ${p.cmd}`)},"background jobs");
+const PKG = {
+  indexes: [],
+  readRepos(){try { return JSON.parse(FS.readFile("/etc/pkg/repos.json")); }catch { return [{name:"official",url:"./repo/index.json",enabled:true}]; }},
+  writeRepos(r){ FS.writeFile("/etc/pkg/repos.json", JSON.stringify(r,null,2)); },
+  readStatus(){ try{return JSON.parse(FS.readFile("/var/lib/pkg/status.json"));}catch{return{};} },
+  writeStatus(s){ FS.writeFile("/var/lib/pkg/status.json",JSON.stringify(s,null,2)); packages=new Set(Object.keys(s)); },
+  async update(){this.indexes=[];const repos=this.readRepos().filter(r=>r.enabled!==false);if(!repos.length) throw Error("pkg: no enabled repositories");for(const repo of repos){try{const res=await fetch(repo.url,{cache:"no-store"});if(!res.ok) throw Error(`HTTP ${res.status}`);const idx=await res.json();this.indexes.push({repo,index:idx});FS.writeFile(`/var/cache/pkg/${repo.name}.json`,JSON.stringify(idx,null,2));out(`Hit: ${repo.name} ${idx.name||"repository"} (${Object.keys(idx.packages||{}).length} packages)`);}catch(e){ out(`Err: ${repo.name}: ${e.message}`); }}if(!this.indexes.length) throw Error("pkg: failed to download repository indexes");out("Package lists updated.");},
+  async ensureIndexes(){if(this.indexes.length) return;const repos=this.readRepos().filter(r=>r.enabled!==false);for(const repo of repos){try{ const idx=JSON.parse(FS.readFile(`/var/cache/pkg/${repo.name}.json`)); this.indexes.push({repo,index:idx}); }catch{}}if(!this.indexes.length) await this.update();},
+  async find(name){await this.ensureIndexes();for(const src of this.indexes){ const meta=src.index.packages?.[name]; if(meta)return {src,meta}; }return null;},
+  resolveURL(base,rel){ try{return new URL(rel,new URL(base,location.href)).href}catch{return rel} },
+  async installOne(name,stack=new Set()){const status=this.readStatus();if(status[name]){out(`${name} ${status[name].version} is already installed`);return;}if(stack.has(name))throw Error("dependency cycle: "+[...stack,name].join(" -> "));stack.add(name);const found=await this.find(name); if(!found)throw Error(`package not found: ${name}`);const {src,meta}=found;for(const dep of meta.depends||[]) await this.installOne(dep,new Set(stack));const manifestUrl=this.resolveURL(src.repo.url,meta.manifest);const res=await fetch(manifestUrl,{cache:"no-store"}); if(!res.ok)throw Error(`manifest ${name}: HTTP ${res.status}`);const man=await res.json();out(`Fetching ${name} ${man.version||meta.version} from ${src.repo.name}...`);const installedFiles=[];for(const f of man.files||[]){const path=FS.normalize(f.path);FS.mkdir(FS.parent(path),true);let data=f.content;if(data==null && f.source){const fr=await fetch(this.resolveURL(manifestUrl,f.source)); if(!fr.ok)throw Error(`file ${f.source}: HTTP ${fr.status}`); data=await fr.text();}FS.writeFile(path,data??"");if(f.mode)FS.stat(path).mode=f.mode;installedFiles.push(path);}const ss=this.readStatus();ss[name]={version:man.version||meta.version||"0",repo:src.repo.name,files:installedFiles,description:man.description||meta.description||""};this.writeStatus(ss);out(`Installed: ${name} ${ss[name].version} (${installedFiles.length} files)`);},
+  async remove(name){const ss=this.readStatus(),p=ss[name]; if(!p){out(`${name} is not installed`);return;}for(const f of [...(p.files||[])].sort((a,b)=>b.length-a.length)){try{if(FS.exists(f)&&FS.stat(f).type==="file")FS.rm(f)}catch{}}delete ss[name]; this.writeStatus(ss); out(`Removed: ${name}`);}
+};
+
+const APK = {
+  arch: /iPhone|iPad|Macintosh/.test(navigator.userAgent) ? "aarch64" : "x86_64",
+  branch: "latest-stable",
+  repos: ["main","community"],
+  base: "https://dl-cdn.alpinelinux.org/alpine",
+  repoBase(repo){return `${this.base}/${this.branch}/${repo}/${this.arch}`;},
+  async gunzip(bytes){if(typeof DecompressionStream==="undefined") throw Error("gzip decompression is not supported by this browser");const ds=new DecompressionStream("gzip");const stream=new Blob([bytes]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer());},
+  untar(bytes){const files={};const dec=new TextDecoder();let off=0;const oct=(a,b)=>{const t=dec.decode(bytes.slice(a,b)).replace(/\0.*$/," ").trim();return t?parseInt(t,8):0;};while(off+512<=bytes.length){const hdr=bytes.slice(off,off+512);if(hdr.every(x=>x===0)) break;const name=dec.decode(hdr.slice(0,100)).replace(/\0.*$/," ").trim();const prefix=dec.decode(hdr.slice(345,500)).replace(/\0.*$/," ").trim();const full=(prefix?prefix+"/":"")+name;const size=oct(off+124,off+136);const type=String.fromCharCode(bytes[off+156]||48);const start=off+512,end=start+size;if((type==="0"||type==="\0")&&full) files[full]=bytes.slice(start,end);off=start+Math.ceil(size/512)*512;}return files;},
+  parseIndex(text,repo,base){const pkgs={};for(const block of text.split(/\n\n+/)){if(!block.trim())continue;const m={repo,base};for(const line of block.split("\n")){const i=line.indexOf(":");if(i<1)continue;const k=line.slice(0,i),v=line.slice(i+1);if(k==="P")m.name=v;else if(k==="V")m.version=v;else if(k==="A")m.arch=v;else if(k==="S")m.size=Number(v)||0;else if(k==="I")m.installedSize=Number(v)||0;else if(k==="T")m.description=v;else if(k==="U")m.url=v;else if(k==="L")m.license=v;else if(k==="o")m.origin=v;else if(k==="D")m.depends=v.split(/\s+/).filter(Boolean);else if(k==="p")m.provides=v.split(/\s+/).filter(Boolean);}if(m.name)pkgs[m.name]=m;}return pkgs;},
+  async update(){FS.mkdir("/etc/apk",true);FS.mkdir("/var/cache/apk",true);FS.mkdir("/var/lib/apk",true);let total=0;for(const repo of this.repos){const base=this.repoBase(repo),url=base+"/APKINDEX.tar.gz";out(`fetch ${url}`);const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error(`apk: ${repo}: HTTP ${r.status}`);const gz=new Uint8Array(await r.arrayBuffer());const tar=await this.gunzip(gz);const files=this.untar(tar);const key=Object.keys(files).find(x=>x==="APKINDEX"||x.endsWith("/APKINDEX"));if(!key)throw Error(`apk: ${repo}: APKINDEX not found in archive`);const text=new TextDecoder().decode(files[key]);const parsed=this.parseIndex(text,repo,base);total+=Object.keys(parsed).length;FS.writeFile(`/var/cache/apk/${repo}.json`,JSON.stringify(parsed));out(`OK: ${repo}: ${Object.keys(parsed).length} packages`);}FS.writeFile("/etc/apk/repositories",this.repos.map(r=>`${this.base}/${this.branch}/${r}`).join("\n")+"\n");FS.writeFile("/var/lib/apk/world",FS.exists("/var/lib/apk/world")?FS.readFile("/var/lib/apk/world"):"");await saveFS();out(`repository indexes loaded: ${total} packages (${this.arch})`);},
+  loadIndexes(){const all={};for(const repo of this.repos){try{const idx=JSON.parse(FS.readFile(`/var/cache/apk/${repo}.json`));for(const [n,m] of Object.entries(idx))if(!all[n])all[n]=m;}catch{}}return all;},
+  async ensure(){const i=this.loadIndexes();if(Object.keys(i).length)return i;await this.update();return this.loadIndexes();},
+  async search(q=""){const idx=await this.ensure(),x=q.toLowerCase();Object.values(idx).filter(p=>!x||p.name.toLowerCase().includes(x)||(p.description||"").toLowerCase().includes(x)).slice(0,250).forEach(p=>out(`${p.name}-${p.version} - ${p.description||""}`));},
+  async info(name){const idx=await this.ensure(),p=idx[name];if(!p)throw Error(`apk: package not found: ${name}`);out(`name: ${p.name}\nversion: ${p.version}\ndescription: ${p.description||""}\narch: ${p.arch||this.arch}\nlicense: ${p.license||""}\norigin: ${p.origin||p.name}\nrepository: ${p.repo}\nsize: ${p.size||0}\ninstalled-size: ${p.installedSize||0}\ndepends: ${(p.depends||[]).join(" ")}`);},
+  async fetchPackage(name){const idx=await this.ensure(),p=idx[name];if(!p)throw Error(`apk: package not found: ${name}`);const url=`${p.base}/${p.name}-${p.version}.apk`;out(`Downloading ${url}`);const r=await fetch(url,{cache:"no-store"});if(!r.ok)throw Error(`apk: HTTP ${r.status}`);const bytes=new Uint8Array(await r.arrayBuffer());const path=`/var/cache/apk/${p.name}-${p.version}.apk`;FS.writeBinary(path,bytes);await saveFS();out(`saved ${path} (${bytes.byteLength} bytes)`);return {p,path,bytes};},
+  world(){try{return FS.readFile("/var/lib/apk/world").split("\n").filter(Boolean)}catch{return[]}},
+  async add(names){if(!names.length)throw Error("usage: apk add PACKAGE...");const world=new Set(this.world());for(const name of names){const {p,path}=await this.fetchPackage(name);world.add(name);out(`Downloaded real Alpine package: ${p.name}-${p.version}`);out(`Archive: ${path}`);out(`Not executed: Alpine native binaries require a Linux ABI/CPU runtime, which POSIX.js does not emulate.`);}FS.writeFile("/var/lib/apk/world",[...world].sort().join("\n")+"\n");await saveFS();},
+  async del(names){const world=new Set(this.world());for(const name of names){world.delete(name);for(const k of [...FS.nodes.keys()])if(k.startsWith(`/var/cache/apk/${name}-`)&&k.endsWith(".apk"))FS.rm(k);out(`removed ${name} from Alpine world/cache`);}FS.writeFile("/var/lib/apk/world",[...world].sort().join("\n")+(world.size?"\n":""));await saveFS();}
+};
+cmd("apk",async(a)=>{const sub=a[0]||"help";if(sub==="update")return await APK.update();if(sub==="search")return await APK.search(a.slice(1).join(" "));if(sub==="info")return await APK.info(a[1]);if(sub==="fetch"){for(const n of a.slice(1))await APK.fetchPackage(n);return;}if(sub==="add")return await APK.add(a.slice(1).filter(x=>!x.startsWith("-")));if(sub==="del"||sub==="remove")return await APK.del(a.slice(1).filter(x=>!x.startsWith("-")));if(sub==="world")return out(APK.world().join("\n"));if(sub==="policy"){const idx=await APK.ensure(),p=idx[a[1]];if(!p)return out(`apk: package not found: ${a[1]}`);return out(`${p.name} policy:\n  ${p.version} ${p.repo}/${APK.arch}`);}if(sub==="arch")return out(APK.arch);if(sub==="repos")return out(APK.repos.map(r=>APK.repoBase(r)).join("\n"));out("usage: apk update|search QUERY|info PKG|fetch PKG...|add PKG...|del PKG...|world|policy PKG|arch|repos");},"real Alpine repository client");
+
+cmd("pkg",async(a)=>{const sub=a[0]||"help";if(sub==="update")return await PKG.update();if(sub==="list"){const ss=PKG.readStatus();for(const [n,m] of Object.entries(ss).sort())out(`${n} ${m.version} [installed] ${m.description||""}`);return;}if(sub==="search"){await PKG.ensureIndexes();const q=(a.slice(1).join(" ")||"").toLowerCase();const seen=new Set;for(const {repo,index} of PKG.indexes)for(const [n,m] of Object.entries(index.packages||{}))if(!seen.has(n)&&(!q||n.includes(q)||(m.description||"").toLowerCase().includes(q))){seen.add(n);out(`${n.padEnd(18)} ${m.version||"0"}  ${m.description||""} [${repo.name}]`)}return;}if(sub==="info"){const f=await PKG.find(a[1]);if(!f)return out(`pkg: package not found: ${a[1]}`);out(`${a[1]} ${f.meta.version||"0"}\n${f.meta.description||""}\nRepository: ${f.src.repo.name}\nDepends: ${(f.meta.depends||[]).join(", ")||"none"}`);return;}if(sub==="install"){if(a.length<2)return out("usage: pkg install PACKAGE...");for(const n of a.slice(1))await PKG.installOne(n);await saveFS();return;}if(sub==="remove"||sub==="uninstall"){for(const n of a.slice(1))await PKG.remove(n);await saveFS();return;}if(sub==="upgrade"){await PKG.update();const ss=PKG.readStatus();for(const n of Object.keys(ss)){const f=await PKG.find(n);if(f&&f.meta.version&&f.meta.version!==ss[n].version){await PKG.remove(n);await PKG.installOne(n);}}await saveFS();return;}if(sub==="repo"){const op=a[1]||"list",repos=PKG.readRepos();if(op==="list"){repos.forEach((r,i)=>out(`${i}: ${r.enabled===false?"disabled":"enabled"} ${r.name} ${r.url}`));return;}if(op==="add"){const url=a[2],name=a[3]||`repo${repos.length+1}`;if(!url)return out("usage: pkg repo add URL [NAME]");repos.push({name,url,enabled:true});PKG.writeRepos(repos);PKG.indexes=[];await saveFS();out(`Added repository ${name}`);return;}if(op==="remove"){const key=a[2];const next=repos.filter((r,i)=>r.name!==key&&String(i)!==key);PKG.writeRepos(next);PKG.indexes=[];await saveFS();out(`Removed repository ${key}`);return;}return out("usage: pkg repo list|add URL [NAME]|remove NAME");}out("usage: pkg update|search QUERY|info PACKAGE|install PACKAGE...|remove PACKAGE...|upgrade|list|repo ...");},"repository package manager");
+cmd("apt",async(a)=>{const map={"update":"update","upgrade":"upgrade","install":"install","remove":"remove","search":"search","show":"info"};return await commands.pkg.fn([map[a[0]]||a[0],...a.slice(1)])},"apt-compatible pkg frontend");
+cmd("ping",async(a)=>{const h=a.filter(x=>!x.startsWith("-"))[0]||"localhost";const url=/^https?:\/\//.test(h)?h:`https://${h}/`;out(`PING ${h}: browser runtimes cannot send raw ICMP; testing HTTPS reachability instead`);const t=performance.now();try{await fetch(url,{method:"HEAD",mode:"no-cors",cache:"no-store"});out(`${h}: reachable via browser network in ${(performance.now()-t).toFixed(1)} ms`);}catch(e){throw Error(`ping: network request failed: ${e.message}`)}},"HTTPS reachability test (raw ICMP unavailable in browsers)");
+cmd("ip",(a)=>{if(!a.length||a[0]==="addr"||a[0]==="a")out("1: lo: <LOOPBACK,UP> mtu 65536\n    inet 127.0.0.1/8 scope host lo\n2: web0: <UP> mtu 1500\n    inet browser-managed scope global web0");else if(a[0]==="route")out("default via browser dev web0");else out("ip: supported: addr, route")},"network configuration");
+cmd("ifconfig",()=>out("lo: flags=73<UP,LOOPBACK,RUNNING>  inet 127.0.0.1\nweb0: flags=67<UP,RUNNING>  inet browser-managed"),"network interfaces");
+cmd("curl",async(a)=>{let method="GET",headers={},body=null,outFile=null,head=false,silent=false,url=null;for(let i=0;i<a.length;i++){const x=a[i];if(x==="-I"||x==="--head"){head=true;method="HEAD";}else if(x==="-s"||x==="--silent")silent=true;else if((x==="-X"||x==="--request")&&a[i+1])method=a[++i].toUpperCase();else if((x==="-H"||x==="--header")&&a[i+1]){const h=a[++i],j=h.indexOf(":");if(j>0)headers[h.slice(0,j).trim()]=h.slice(j+1).trim();}else if((x==="-d"||x==="--data")&&a[i+1])body=a[++i];else if((x==="-o"||x==="--output")&&a[i+1])outFile=a[++i];else if(x==="-O"||x==="--remote-name")outFile="__REMOTE__";else if(!x.startsWith("-"))url=x;}if(!url)throw Error("curl: no URL specified");const r=await fetch(url,{method,headers,body:method==="GET"||method==="HEAD"?undefined:body,redirect:"follow",cache:"no-store"});if(head){out(`HTTP ${r.status} ${r.statusText}`);r.headers.forEach((v,k)=>out(`${k}: ${v}`));return;}const ct=r.headers.get("content-type")||"",bytes=new Uint8Array(await r.arrayBuffer());if(outFile){if(outFile==="__REMOTE__"){try{outFile=new URL(url).pathname.split("/").filter(Boolean).pop()||"download"}catch{outFile="download"}}if(ct.startsWith("text/")||ct.includes("json")||ct.includes("xml")||ct.includes("javascript"))FS.writeFile(outFile,new TextDecoder().decode(bytes));else FS.writeBinary(outFile,bytes);await saveFS();if(!silent)out(`curl: saved ${bytes.byteLength} bytes to ${FS.normalize(outFile)}`);}else{if(!r.ok&&!silent)out(`curl: HTTP ${r.status}`);if(ct.startsWith("text/")||ct.includes("json")||ct.includes("xml")||ct.includes("javascript")||!ct)out(new TextDecoder().decode(bytes).replace(/\n$/,"") );else out(`curl: binary response (${bytes.byteLength} bytes); use -o FILE`);}},"real HTTP/HTTPS client using browser fetch");
+cmd("wget",async(a)=>{const url=a.filter(x=>!x.startsWith("-")).pop();if(!url)throw Error("wget: missing URL");let name;try{name=new URL(url).pathname.split("/").filter(Boolean).pop()||"index.html"}catch{name="download"}return await commands.curl.fn(["-o",name,url]);},"download URL to filesystem");
+cmd("tree",(a)=>{const root=FS.normalize(a[0]||cwd);out(root);for(const k of [...FS.nodes.keys()].sort().filter(k=>k.startsWith(root==="/"?"/":root+"/")&&k!==root)){const rel=k.slice((root==="/"?"":root).length).replace(/^\//,"");const d=rel.split("/").length-1;out("  ".repeat(d)+"└── "+FS.base(k));}},"directory tree");
+cmd("du",(a)=>{const root=FS.normalize(a.filter(x=>!x.startsWith("-"))[0]||cwd);let n=0;for(const [k,v] of FS.nodes)if((k===root||k.startsWith(root+"/"))&&v.type==="file")n+=v.data?.byteLength??v.data?.length??0;out(`${a.includes("-h")?(n<1024?n+"B":(n/1024).toFixed(1)+"K"):n}\t${root}`)},"disk usage");
+cmd("lsblk",()=>out("NAME   TYPE  MOUNTPOINT\nidb0   disk  /\nram0   disk  /tmp\nfb0    dev   /dev/fb0"),"block devices");
+cmd("hexdump",(a)=>{const b=FS.readBinary(a[a.length-1]);for(let i=0;i<b.length;i+=16){const row=[...b.slice(i,i+16)];out(i.toString(16).padStart(8,"0")+"  "+row.map(x=>x.toString(16).padStart(2,"0")).join(" ").padEnd(47)+"  |"+row.map(x=>(x>=32&&x<127)?String.fromCharCode(x):".").join("")+"|");}},"hex dump");
+cmd("base64",(a)=>{const p=a[a.length-1],s=FS.readFile(p);out(a.includes("-d")?decodeURIComponent(escape(atob(s.trim()))):btoa(unescape(encodeURIComponent(s))))},"base64 encode/decode");
+cmd("sha256sum",async(a)=>{const p=a[0],b=FS.readBinary(p),h=await crypto.subtle.digest("SHA-256",b);out([...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("")+"  "+p)},"SHA-256 checksum");
+cmd("source",async(a)=>await runScript(a[0]),"execute shell file");
+cmd("startx",()=>guiDemo(),"start framebuffer GUI");
+cmd("vncserver",()=>out("VNC framebuffer service is browser-local. Use VNC WS to attach a WebSocket gateway."),"VNC framebuffer service");
+cmd("poweroff",async()=>await commands.shutdown.fn([]),"power off");
+
+function editor(path){const old=FS.exists(path)?FS.readFile(path):"";const text=prompt("Edit "+FS.normalize(path),old);if(text!==null){FS.writeFile(path,text); out("written "+FS.normalize(path));}}
+async function runScript(path){const src=FS.readFile(path);const lines=src.split(/\r?\n/);for(let raw of lines){raw=raw.trim();if(!raw || raw.startsWith("#")) continue;if(raw.startsWith("for ") || raw.startsWith("if ") || raw==="fi" || raw==="done"){out("sh: structured control flow is not implemented in this compact shell");continue;}await executeLine(raw);}}
+async function executeCommand(tokens, stdin=""){if(!tokens.length) return "";tokens=tokens.map(expand);const name=tokens.shift();if(name.includes("=") && !name.includes("/")){const i=name.indexOf("="); env[name.slice(0,i)]=name.slice(i+1); return "";}if((name.endsWith(".sh") || name.includes("/")) && FS.exists(name)){await runScript(name); return "";}const c=commands[name];if(!c) throw new Error(`${name}: command not found`);let capture="";const prev=outputHook;outputHook=(s)=>{ capture += String(s) + "\n"; };env.STDIN=stdin;try{ await c.fn(tokens); }finally{ outputHook=prev; }return capture;}
+async function executePipeline(tokens){const segs=[]; let cur=[];for(const t of tokens){ if(t==="|"){segs.push(cur);cur=[];} else cur.push(t); }segs.push(cur);let data="";for(let seg of segs){let outFile=null, append=false, inFile=null;const clean=[];for(let i=0;i<seg.length;i++){if(seg[i]===">"||seg[i]===">>"){append=seg[i]===">>";outFile=seg[++i];}else if(seg[i]==="<"){inFile=seg[++i];}else clean.push(seg[i]);}if(inFile) data=FS.readFile(inFile);data=await executeCommand(clean,data);if(outFile){FS.writeFile(outFile,data,append); data="";}}if(data) print(data.replace(/\n$/,"") );}
+async function executeLine(line, quiet=false){const groups=[];let cur="",q=null;for(let i=0;i<line.length;i++){const c=line[i];if(q){cur+=c;if(c===q)q=null;continue;}if(c==="'"||c==='"'){q=c;cur+=c;continue;}if(c===";"){groups.push(cur);cur="";continue;}cur+=c;}if(cur.trim())groups.push(cur);for(const g of groups){const tokens=lex(g.trim());if(!tokens.length) continue;try{await executePipeline(tokens);}catch(e){if(!quiet)print("sh: "+e.message);}}await saveFS();}
+async function saveFS(){await dbSet("filesystem",FS.serialize());await dbSet("state",{cwd,user,hostname,env});statusEl.textContent="filesystem synced · "+new Date().toLocaleTimeString();}
+async function boot(){bootTag.textContent="BOOTING";term.textContent="";print("POSIX.js GNU/POSIX browser environment");print("Mounting IndexedDB filesystem...");const saved=await dbGet("filesystem");if(saved)FS.load(saved);else{initFS();await saveFS();}const state=await dbGet("state");if(state){cwd=state.cwd||cwd;user=state.user||user;hostname=state.hostname||hostname;env={...env,...state.env};}setPrompt();print("Mounting /proc, /sys, /dev, /mnt...");print("Starting shell /bin/sh...");print("Last login: browser session\nType 'help' for available commands.");bootTag.textContent="RUNNING";drawDesktop();}
+function drawDesktop(){const g=ctx.createLinearGradient(0,0,canvas.width,canvas.height);g.addColorStop(0,"#101820");g.addColorStop(1,"#080a0d");ctx.fillStyle=g;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle="#dbe7ee";ctx.font="28px ui-monospace, monospace";ctx.fillText("POSIX.js Framebuffer",34,54);ctx.fillStyle="#7ee787";ctx.font="18px ui-monospace, monospace";ctx.fillText("Local VNC-style canvas console",34,88);ctx.fillStyle="#1b2228";ctx.fillRect(34,125,732,390);ctx.strokeStyle="#3a4650";ctx.strokeRect(34,125,732,390);ctx.fillStyle="#a8b3ba";ctx.font="16px ui-monospace, monospace";["Display device: /dev/fb0 (simulated)","Pointer device: /dev/input/mouse0","Keyboard device: /dev/input/event0","","Use GUI Demo to draw windows.","VNC WS accepts a websocket URL when your server exposes","a browser-compatible framebuffer protocol.","","Raw native RFB over TCP is not directly available in browsers;"].forEach((l,i)=>ctx.fillText(l,58,165+i*26));}
+function guiDemo(){drawDesktop();ctx.fillStyle="#ececec";ctx.fillRect(150,150,500,300);ctx.fillStyle="#222";ctx.fillRect(150,150,500,36);ctx.fillStyle="#fff";ctx.font="16px sans-serif";ctx.fillText("POSIX.js GUI demo",168,174);ctx.fillStyle="#111";ctx.font="20px ui-monospace, monospace";ctx.fillText("Hello from /dev/fb0",190,240);ctx.fillStyle="#444";ctx.fillText("Mouse + keyboard events are captured.",190,280);ctx.fillText("This is a local framebuffer surface.",190,320);}
+canvas.addEventListener("pointerdown",e=>{canvas.focus();statusEl.textContent=`pointer down x=${Math.round(e.offsetX)} y=${Math.round(e.offsetY)}`;});
+canvas.addEventListener("pointermove",e=>{if(e.buttons)statusEl.textContent=`pointer move x=${Math.round(e.offsetX)} y=${Math.round(e.offsetY)}`;});
+canvas.addEventListener("keydown",e=>{statusEl.textContent=`key ${e.key}`;if(vncSocket?.readyState===1)vncSocket.send(JSON.stringify({type:"key",key:e.key,code:e.code,down:true}));});
+canvas.addEventListener("keyup",e=>{if(vncSocket?.readyState===1)vncSocket.send(JSON.stringify({type:"key",key:e.key,code:e.code,down:false}));});
+async function connectVNC(){const url=prompt("WebSocket framebuffer/VNC gateway URL","ws://localhost:6080/");if(!url)return;try{if(vncSocket)vncSocket.close();vncSocket=new WebSocket(url);vncSocket.binaryType="arraybuffer";vncSocket.onopen=()=>statusEl.textContent="VNC websocket connected";vncSocket.onclose=()=>statusEl.textContent="VNC websocket closed";vncSocket.onerror=()=>statusEl.textContent="VNC websocket error";vncSocket.onmessage=async ev=>{if(typeof ev.data==="string"){try{const m=JSON.parse(ev.data);if(m.type==="status")statusEl.textContent=m.text;if(m.type==="rect"){ctx.fillStyle=m.color||"#000";ctx.fillRect(m.x,m.y,m.w,m.h);}}catch{}}else{const b=new Uint8Array(ev.data);if(b.length>=4){const w=(b[0]<<8)|b[1],h=(b[2]<<8)|b[3];if(b.length>=4+w*h*4){const img=new ImageData(new Uint8ClampedArray(b.buffer,4,w*h*4),w,h);ctx.putImageData(img,0,0);}}}};}catch(e){statusEl.textContent="VNC connect failed: "+e.message}}
+cmdInput.addEventListener("keydown",async e=>{if(e.key==="Enter"){const line=cmdInput.value;cmdInput.value="";if(line.trim()){history.push(line);historyPos=history.length;print(promptEl.textContent+" "+line);await executeLine(line);}setPrompt();}else if(e.key==="ArrowUp"){e.preventDefault();if(historyPos>0)cmdInput.value=history[--historyPos]||"";}else if(e.key==="ArrowDown"){e.preventDefault();if(historyPos<history.length-1)cmdInput.value=history[++historyPos]||"";else{historyPos=history.length;cmdInput.value="";}}else if(e.key==="Tab"){e.preventDefault();const v=cmdInput.value,part=v.split(/\s/).pop();const opts=Object.keys(commands).filter(n=>n.startsWith(part));if(opts.length===1)cmdInput.value=v.slice(0,-part.length)+opts[0];else if(opts.length>1)print(opts.join("  "));}});
+document.querySelector("#bootBtn").onclick=boot;
+document.querySelector("#saveBtn").onclick=saveFS;
+document.querySelector("#resetBtn").onclick=async()=>{if(confirm("Delete persistent POSIX.js filesystem?")){await dbClear();initFS();await saveFS();await boot();}};
+document.querySelector("#demoBtn").onclick=guiDemo;
+document.querySelector("#connectBtn").onclick=connectVNC;
+window.POSIXJS={FS,commands,executeLine,saveFS,boot,PKG,APK};
+boot();
+})();
+</script>
+</body>
+</html>
