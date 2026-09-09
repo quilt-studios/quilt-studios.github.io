@@ -1,0 +1,12 @@
+{
+  "name": "hello",
+  "version": "1.0.0",
+  "description": "GNU-style hello test package",
+  "files": [
+    {
+      "path": "/usr/bin/hello",
+      "mode": "0755",
+      "content": "#!/bin/sh\necho Hello from the POSIX.js package repository!\n"
+    }
+  ]
+}
