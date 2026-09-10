@@ -1,0 +1,90 @@
+﻿# Plix Free Public License (PFPL)
+## Version 1.0
+
+Copyright (C) 2026 Robin Ari Hanazay
+
+---
+
+## 1. Definitions
+
+"Software" means the source code, object code, documentation, and other materials distributed under this License.
+
+"Modified Version" means any version of the Software that has been changed, adapted, or extended.
+
+"Device" means a hardware product distributed with the Software as part of its intended functionality.
+
+"Distributor" means any person or organization distributing the Software or a Device containing the Software.
+
+"User" means any person or organization lawfully using a Device containing the Software.
+
+"Installation Information" means the information reasonably required to install and run Modified Versions of the Software on a Device.
+
+"Contributor" means any person or organization providing modifications or additions to the Software.
+
+---
+
+## 2. Grant of Rights
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Software, to use, study, copy, modify, distribute, and sell copies of the Software.
+
+Modified Versions may be distributed under different names and licenses, provided that original copyright notices, attribution notices, and notices referring to this License are preserved.
+
+This License does not grant permission to use trademarks, logos, or names belonging to copyright holders.
+
+---
+
+## 3. User Freedom on Devices
+
+A Distributor of a Device containing the Software must not intentionally add technical restrictions whose primary purpose is to prevent Users from installing or running Modified Versions of the Software when the Device supports such functionality.
+
+If a Distributor provides technical mechanisms required for installation or execution of the Software, the Distributor must provide the Installation Information necessary for Users to install and run Modified Versions.
+
+This does not require disclosure of unrelated proprietary technology, trade secrets, private keys, or confidential information not required for the Software.
+
+---
+
+## 4. Contributions
+
+A Contributor grants the necessary rights for their contributions when those contributions are distributed with the Software under this License.
+
+---
+
+## 5. Termination and Restoration
+
+Rights under this License terminate only after a substantial violation and written notice.
+
+Rights are automatically restored if the violation is corrected within 30 days after receiving notice.
+
+---
+
+## 6. Patent License
+
+Each Contributor and copyright holder grants a worldwide, non-exclusive, royalty-free patent license for patent claims necessary to exercise the rights granted under this License.
+
+---
+
+## 7. No Additional Restrictions
+
+No person may impose additional legal or technical restrictions that prevent others from exercising rights granted under this License.
+
+---
+
+## 8. Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+TO THE MAXIMUM EXTENT PERMITTED BY AUSTRIAN LAW, COPYRIGHT HOLDERS AND CONTRIBUTORS SHALL NOT BE LIABLE FOR DAMAGES ARISING FROM USE, MODIFICATION, OR DISTRIBUTION OF THE SOFTWARE.
+
+Nothing in this License excludes rights or obligations that cannot legally be excluded.
+
+---
+
+## 9. Applicable Law
+
+This License shall be governed by the laws of the Republic of Austria.
+
+The courts of Austria shall have jurisdiction over disputes relating to this License, subject to mandatory applicable law.
+
+---
+
+End of Plix Free Public License (PFPL), Version 1.0
