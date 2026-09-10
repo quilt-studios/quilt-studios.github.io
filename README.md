@@ -4,31 +4,53 @@ POSIX.js is an experimental browser-native Unix-like userspace environment built
 
 > **Project status:** experimental. POSIX.js is not Linux, is not a complete POSIX implementation, and does not provide full compatibility with Alpine Linux, systemd, Wayland, or native RISC-V Linux binaries yet.
 
+## Current release: 26.0.3
+
+POSIX.js **26.0.3** expands the browser userspace with a larger Unix command set, a richer filesystem layout, safer persistent upgrades and improved runtime diagnostics.
+
+New commands in 26.0.3 include:
+
+- `grep` — pattern matching with `-i`, `-n`, `-v` and fixed-string mode
+- `base64` — Base64 encoding and decoding
+- `realpath` — resolved absolute paths
+- `cksum` — POSIX-style CRC checksum and byte count
+- `uniq` — adjacent duplicate filtering with count/duplicate/unique modes
+- `cut` — character and delimited field extraction
+- `tac` — reverse line order
+- `rev` — reverse characters per line
+- `update` — inspect and run POSIX.js persistent-system updates
+
+The 26.0.3 migration also adds conventional filesystem locations including `/mnt`, `/opt`, `/proc`, `/root`, `/srv`, `/usr/local`, `/usr/local/bin` and `/var/tmp`. Downgrades are now explicitly refused by the update manager rather than silently replacing newer version metadata.
+
+The `status` command now reports filesystem links, IndexedDB persistence, services, last network fetch, Wayland state and update state in addition to the existing runtime information.
+
 ## Goals
 
-POSIX.js focuses on five areas:
-
 1. **Browser-native Unix environment** — filesystem, shell, commands, package handling and process-oriented APIs implemented in JavaScript.
-2. **Persistent local system** — system state is stored in IndexedDB so files and configuration can survive page reloads.
+2. **Persistent local system** — system state is stored in IndexedDB so files and configuration survive page reloads and can be migrated between releases.
 3. **RISC-V userspace execution** — an in-project RV64 execution engine is being developed for ELF binaries.
 4. **Linux ecosystem compatibility experiments** — Alpine APK packages, systemd-like units and Wayland-like interfaces are progressively mapped into browser-native implementations.
 5. **Desktop and mobile UI experiments** — UIDE provides a graphical shell, including a touch-first mobile homescreen mode.
 
-## Current version
+## Versioning
 
-- POSIX.js version: **26.0.2.3**
-- Versioning follows the calendar-year major series: 26.x for 2026, 27.x for 2027, and so on.
+- Current version: **26.0.3**
+- 2026 releases use the 26.x series; 2027 releases move to 27.x.
 - Deployment builds use a separate build identifier and are persisted inside the virtual filesystem.
 
 ## Architecture
 
-POSIX.js is intentionally modular. The browser bootloader loads small subsystems in dependency order rather than keeping the entire environment in one script.
+POSIX.js is modular. `lib/bootstrap.js` reads `build.json`, performs cache recovery and loads CSS and JavaScript subsystems in dependency order.
 
-### Boot and updates
+### Persistent filesystem
 
-`lib/bootstrap.js` loads the current `build.json`, applies cache-busting build identifiers, loads styles and JavaScript modules in order, and attempts to recover from stale browser caches. The update manager tracks both the installed semantic version and deployment build in the virtual filesystem and can run migrations when an older persistent installation is opened by a newer release.
+The core exposes a Unix-like filesystem model backed by IndexedDB. It supports directories, files, binary files and symbolic links inside a browser-owned virtual filesystem. It is not the host operating system filesystem.
 
-Stored update metadata includes:
+Important system paths include `/etc`, `/home`, `/usr`, `/var`, `/run`, `/dev`, `/tmp`, `/opt`, `/mnt`, `/srv` and POSIX.js metadata under `/var/lib/posixjs`.
+
+### Updates and migrations
+
+Persistent installations are upgraded by `lib/update-manager.js`. Version and build metadata are stored in:
 
 ```text
 /var/lib/posixjs/system-version
@@ -36,48 +58,29 @@ Stored update metadata includes:
 /var/log/posixjs-update.log
 ```
 
-### Virtual filesystem
-
-The POSIX.js core exposes a Unix-like filesystem model with paths, directories, files, links and persistent storage. IndexedDB is used as the persistence layer. This is a browser filesystem model, not a mounted host filesystem.
-
-### Shell
-
-The shell is registry-based. Commands are split into individual JavaScript modules under `lib/commands/`, making commands independently maintainable and reducing the size of monolithic shell code.
-
-Examples include filesystem commands, text utilities, system information, package commands, UIDE controls, design controls and experimental Labs controls.
-
-Run:
+Use:
 
 ```text
-help
+update status
+update run
+update log
 ```
 
-for the command list available in the current build.
+Migrations preserve existing filesystem content and add required system structures. The updater snapshots runtime state before migration and restores it when a migration fails. A runtime older than the installed system is rejected as a downgrade.
 
-### `ls`
+## Shell and commands
 
-`ls` is implemented specifically for the POSIX.js filesystem and supports common listing behavior such as hidden files, long listings, human-readable sizes, recursive traversal, classification and optional Nerd Font icons.
+Commands are registered independently and each shell command lives in `lib/commands/<name>.js`. Run `help` for the authoritative command list in the loaded build.
 
-Examples:
+The command collection includes filesystem navigation and management, file inspection, text processing, system information, networking helpers, package operations, UIDE controls, themes, Labs and RV64 execution entry points.
 
-```text
-ls
-ls -lah
-ls -R /etc
-ls --icons
-```
+Notable text/file tools include `cat`, `head`, `tail`, `tac`, `rev`, `grep`, `cut`, `uniq`, `sort`, `wc`, `base64`, `cksum`, `find`, `tree`, `stat`, `readlink` and `realpath`.
 
-### Nerd Font support
-
-POSIX.js can detect several locally available Nerd Font family names and use them for terminal rendering and supported file icons. Fonts are not bundled by the project; availability depends on fonts installed on the client device.
+The shell parser is intentionally lightweight and is not yet a complete POSIX shell language implementation. Full pipelines, redirection, shell expansion and scripting semantics remain future work.
 
 ## Alpine APK compatibility
 
-POSIX.js includes an experimental Alpine APK compatibility layer. A GitHub Actions workflow mirrors selected Alpine RISC-V package metadata and prepares browser-friendly package archives.
-
-The package layer currently focuses on package discovery, downloading, archive extraction and installation into the virtual filesystem. It is **not yet a complete Alpine package manager**: arbitrary packages, dependency resolution, maintainer scripts, transactions and complete package semantics are still areas of development.
-
-Typical commands:
+POSIX.js contains an experimental Alpine APK compatibility layer. GitHub Actions mirrors selected Alpine RISC-V package metadata and prepares browser-friendly package archives.
 
 ```text
 apk update
@@ -86,88 +89,46 @@ apk add busybox
 apk info
 ```
 
+This is not yet a complete Alpine package manager. Arbitrary package availability, dependency resolution, package scripts, transactions and complete APK semantics remain incomplete.
+
 ## RISC-V execution
 
-`lib/rv64exec.js` is an experimental RV64 userspace execution engine. It implements a growing subset of RISC-V instructions and Linux-like userspace syscalls using browser-backed resources.
+`lib/rv64exec.js` is an experimental RV64 userspace execution engine. Work already covers ELF64 RISC-V loading, a growing RV64 instruction subset, virtual memory, filesystem calls, clocks, futex/yield/sleep primitives, local Unix-style sockets and shared-memory emulation.
 
-Work in this area includes:
+Compressed RISC-V instructions, full instruction coverage, dynamic ELF loading/relocation, complete process semantics, signals and broader Linux syscall compatibility are still incomplete. Installing a native Alpine package therefore does not imply its executable will run correctly.
 
-- ELF64 RISC-V loading
-- RV64 integer and multiplication/division instruction support
-- virtual memory operations
-- filesystem syscalls
-- clocks and identity calls
-- futex/yield/sleep primitives
-- local Unix-style socket experiments
-- shared-memory emulation
+## systemd compatibility
 
-Important missing areas include complete instruction coverage, compressed RISC-V instructions, a full dynamic loader/relocation path, complete process semantics, signals and broader Linux syscall compatibility. Native Alpine executables therefore should not be assumed to work simply because their APK installs successfully.
-
-## systemd compatibility layer
-
-POSIX.js provides a lightweight systemd-inspired unit interface and `systemctl` command. It can parse and manage a subset of service/unit concepts inside the browser environment.
-
-This is not the real systemd daemon and does not reproduce Linux process supervision or the full unit dependency model.
+POSIX.js provides a lightweight systemd-inspired unit model and `systemctl` interface. It is not the real systemd daemon and does not reproduce Linux process supervision or the complete dependency model.
 
 ## Wayland experiments
 
-The project contains a minimal browser-side Wayland compatibility experiment. It exposes browser-local Wayland-style endpoints and can bridge selected shared-memory surfaces into UIDE canvas windows.
-
-The implementation is intentionally incomplete. Full Wayland protocol coverage, input/seat handling, descriptor passing, output management and complete client compatibility remain future work.
+The browser-side Wayland experiment exposes local Wayland-style endpoints and can bridge selected shared-memory surfaces into UIDE canvas windows. Protocol coverage is partial; complete input/seat handling, descriptor passing, output management and broad client compatibility remain future work.
 
 ## UIDE
 
-UIDE is the custom graphical environment for POSIX.js. It is not GNOME, KDE, Android, or another existing desktop environment.
+UIDE is the custom POSIX.js graphical environment. It is not GNOME, KDE or Android.
 
-Desktop mode currently provides:
-
-- graphical desktop
-- app registry
-- dock and launcher
-- draggable windows
-- minimize/maximize/close controls
-- Files application
-- terminal handoff
-- About application
-- Developer Options
-- Wayland surface windows
-
-Start it with:
+Desktop mode provides an app registry, desktop, dock/launcher, movable windows, Files, terminal integration, About, Developer Options and experimental Wayland surface windows.
 
 ```text
 uide start
+uide dev
 ```
 
 ### UIDE Mobile
 
-UIDE Mobile is a touch-first graphical shell inspired by modern mobile homescreen interaction patterns. It does not attempt to emulate Android itself.
-
-Start it with:
+UIDE Mobile is a touch-first graphical shell inspired by modern mobile homescreen interaction patterns.
 
 ```text
 uide mobile
 ```
 
-Current mobile features include:
-
-- responsive homescreen
-- large clock/date widget
-- favorite app grid
-- translucent app dock
-- searchable all-apps drawer
-- swipe-up and swipe-down drawer gestures
-- mobile application windows
-- Back, Home and Recents-style navigation controls
-- safe-area support for notched devices
-- `visualViewport` handling for mobile browser resizing
-- keyboard navigation fallbacks
-- current POSIX.js build display
+It includes a responsive homescreen, clock/date widget, favorites, translucent dock, searchable app drawer, vertical swipe gestures, mobile app windows, Back/Home/Recents-style controls, iPhone safe-area handling, `visualViewport` support and keyboard navigation fallbacks.
 
 ## Designs
 
-The `designs` subsystem provides persistent themes for the terminal and related UI. It includes an interactive graphical picker with live preview and keyboard navigation.
-
-Examples:
+The `designs` subsystem provides persistent themes and an interactive graphical picker with live preview and keyboard navigation.
 
 ```text
 designs
@@ -180,31 +141,24 @@ designs preview cyber
 
 Themes include Classic, Midnight, Matrix, Nord, Solarized, Light, Dracula, Monokai, Gruvbox, Catppuccin, Tokyo, Ocean, Ember, Violet, Paper, Cyber and additional variants.
 
-## Labs
+## Labs and Mobilemode
 
-Labs contains features that are intentionally experimental and may change substantially between builds.
-
-### Mobilemode
-
-`mobilemode` replaces normal terminal text entry with a purpose-built on-screen terminal keyboard where browser behavior allows it. The keyboard includes shell-oriented shortcuts, cursor navigation, history controls, symbols and modifier actions.
+Labs contains intentionally experimental features. Mobilemode provides a terminal-focused on-screen keyboard with navigation, history, symbols, modifiers and shell shortcuts where browser behavior permits suppression of the normal software keyboard.
 
 ```text
+labs list
 labs mobilemode on
 labs mobilemode off
 labs mobilemode status
 ```
 
-### Developer Options
+## Nerd Font support
 
-UIDE Developer Options exposes runtime information such as POSIX.js version/build, viewport state, Nerd Font availability, Wayland state and Labs status, plus selected development actions.
-
-```text
-uide dev
-```
+POSIX.js can detect supported Nerd Font families already installed on the device and use their glyphs in the terminal and file listings. The project does not bundle font files.
 
 ## Browser support
 
-A major design target is mobile Safari, including iPhone. The project avoids depending on `SharedArrayBuffer` for its core browser model. Browser APIs still differ significantly between engines, so behavior can vary across Safari, Chromium and Firefox.
+Mobile Safari, including iPhone, is an important design target. The core model avoids requiring `SharedArrayBuffer`. Web API behavior still differs between Safari, Chromium and Firefox, so not every feature behaves identically across engines.
 
 ## Repository structure
 
@@ -214,8 +168,8 @@ build.json                  Release/build manifest
 LICENSE.txt                 Plix Free Public License (PFPL) v1.0
 css/                        Terminal, UIDE, Labs and design styles
 lib/bootstrap.js            Cache-aware module loader
-lib/posix-core.js           Core POSIX.js filesystem/runtime state
-lib/update-manager.js       Persistent system migrations
+lib/posix-core.js           Core filesystem/runtime state
+lib/update-manager.js       Persistent migrations and version stamping
 lib/apk.js                  APK compatibility layer
 lib/rv64exec.js             Experimental RV64 executor
 lib/systemd.js              systemd-inspired compatibility layer
@@ -233,44 +187,30 @@ alpine/                     Generated/mirrored Alpine package data
 ## Development principles
 
 - Prefer browser-native APIs over embedding an existing VM.
-- Keep modules small and independently understandable.
-- Preserve persistent user state across upgrades through explicit migrations.
-- Treat compatibility layers accurately: a command-compatible surface is not the same thing as the original Linux subsystem.
-- Keep mobile Safari as an important constraint.
+- Keep subsystems and commands modular.
+- Preserve persistent user state through explicit migrations.
+- Keep compatibility claims precise: compatibility layers are not the original Linux components.
+- Treat mobile Safari as a first-class constraint.
 - Avoid hidden external runtime dependencies where project-owned code can provide the required behavior.
 
 ## Known limitations
 
-POSIX.js remains a prototype. In particular:
-
-- it is not a Linux kernel;
-- POSIX coverage is incomplete;
-- RV64 execution is incomplete;
-- dynamically linked Linux binaries are not generally compatible yet;
-- APK dependency resolution is incomplete;
-- systemd support is a compatibility model, not real systemd;
-- Wayland support is a small protocol experiment;
-- UIDE applications are browser UI components, not native Linux GUI programs;
-- performance is constrained by JavaScript execution and browser sandboxing.
+POSIX.js remains a prototype. It is not a Linux kernel; POSIX coverage and shell semantics are incomplete; RV64 execution and dynamic linking are incomplete; APK dependency resolution is incomplete; systemd and Wayland are compatibility experiments; UIDE applications are browser UI components; and execution performance is constrained by JavaScript and browser sandboxing.
 
 ## Roadmap
 
-Major technical directions include fuller RV64/RVC support, dynamic ELF loading, process and signal semantics, broader syscall coverage, APK dependency resolution, richer Wayland protocol support, faster CPU execution, stronger update/cache validation, more UIDE applications and deeper touch/mobile integration.
+Major directions include fuller RV64/RVC support, dynamic ELF loading, process/signal semantics, broader syscalls, APK dependency resolution, richer Wayland support, faster CPU execution, stronger update validation, richer shell parsing and more UIDE applications.
 
 ## Running POSIX.js
 
-The project is designed for static hosting. Open the GitHub Pages deployment in a modern browser. The system boots locally in the page and persistent state is stored by the browser.
-
-For development, serve the repository from an HTTP server rather than relying on `file://`, because browser storage, module loading and fetch behavior differ for local files.
+The project is designed for static hosting. Open the GitHub Pages deployment in a modern browser. Persistent state is stored locally by the browser. For development, serve the repository over HTTP rather than `file://` because storage and fetch behavior differ for local files.
 
 ## Contributing
 
-Contributions should keep compatibility claims precise and preserve the modular architecture. New shell commands should generally live in their own `lib/commands/<command>.js` module. Changes to persistent system structure should be paired with an update-manager migration when required.
-
-When changing deployed assets, also increment the deployment build identifier so existing installations can invalidate stale cached resources and record the new build.
+New commands should generally be implemented as individual `lib/commands/<command>.js` modules. Persistent filesystem changes should include a migration when required. Deployed asset changes should increment the build identifier so existing installations invalidate stale cached resources.
 
 ## License
 
-POSIX.js is distributed under the **Plix Free Public License (PFPL), Version 1.0**. The license grants rights to use, study, copy, modify, distribute and sell copies of the software, subject to its terms and conditions.
+POSIX.js is distributed under the **Plix Free Public License (PFPL), Version 1.0**. It grants rights to use, study, copy, modify, distribute and sell copies of the software subject to its terms.
 
-See [`LICENSE.txt`](./LICENSE.txt) for the complete license text. The license file is authoritative; this README is only a summary and does not replace the license terms.
+See [`LICENSE.txt`](./LICENSE.txt) for the complete and authoritative license text.
