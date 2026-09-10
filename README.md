@@ -211,6 +211,7 @@ A major design target is mobile Safari, including iPhone. The project avoids dep
 ```text
 index.html                  Browser entry point
 build.json                  Release/build manifest
+LICENSE.txt                 Plix Free Public License (PFPL) v1.0
 css/                        Terminal, UIDE, Labs and design styles
 lib/bootstrap.js            Cache-aware module loader
 lib/posix-core.js           Core POSIX.js filesystem/runtime state
@@ -270,4 +271,6 @@ When changing deployed assets, also increment the deployment build identifier so
 
 ## License
 
-No license is declared in this README. Check the repository for the project's current licensing terms before redistributing or incorporating the code elsewhere.
+POSIX.js is distributed under the **Plix Free Public License (PFPL), Version 1.0**. The license grants rights to use, study, copy, modify, distribute and sell copies of the software, subject to its terms and conditions.
+
+See [`LICENSE.txt`](./LICENSE.txt) for the complete license text. The license file is authoritative; this README is only a summary and does not replace the license terms.
